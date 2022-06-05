@@ -1,7 +1,7 @@
 import logging
 import logging.handlers
 import colorlog
-logger = logging.getLogger('common')  # 获取名为commomn的logger。
+logger: logging.Logger = logging.getLogger('common')  # 获取名为commomn的logger。
 LOG_FILE = 'log.log'
 
 
@@ -20,6 +20,7 @@ def redefine_level_name():
     for i in dic:
         logging.addLevelName(i, dic[i])
 
+
 redefine_level_name()
 fmt = '%(asctime)s [%(levelname)s] %(message)s :%(filename)s:%(lineno)s-%(levelno)s  %(pathname)s on(%(module)s.%(funcName)s) at %(process)d@%(threadName)s  '  # 定义日志格式
 handler = logging.handlers.RotatingFileHandler(
@@ -29,7 +30,6 @@ handler.setFormatter(formatter)      # 为handler添加formatter。
 logger.addHandler(handler)           # 为logger添加handler。
 
 fmt = '%(asctime)s [%(levelname)s] %(message)s'  # 定义日志格式
-from colorlog.escape_codes import escape_codes_foreground
 colors = {
     '*': 'light_blue',
     '+': 'green',
