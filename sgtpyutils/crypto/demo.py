@@ -1,6 +1,6 @@
 from Crypto.Cipher import AES, DES, DES3
 from .utils import padding_to
-from . import test_3des, test_aes, test_des, test_rsa, test_blowfish
+from . import demo_3des, demo_aes, demo_blowfish, demo_des, demo_rsa
 
 
 def main():
@@ -16,15 +16,15 @@ def main():
     content = ('0123456789abcdefAAAAAAAAAA'*5).encode()
     iv = str(config['iv']).encode()
     key = str(config['key']).encode()
-    test_des.main(key, iv, content)
+    demo_des.main(key, iv, content)
     print('-'*20)
-    test_3des.main(key, iv, content)
+    demo_3des.main(key, iv, content)
     print('-'*20)
-    test_aes.main(key, iv, content)
+    demo_aes.main(key, iv, content)
     print('-'*20)
-    test_rsa.main(content)
+    demo_rsa.main(content)
     print('-'*20)
-    test_blowfish.main()
+    demo_blowfish.main()
 
 
 if __name__ == '__main__':
