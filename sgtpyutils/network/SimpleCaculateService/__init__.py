@@ -3,7 +3,10 @@ from ..SimpleTcpService import SimpleTcpService
 
 class SimpleCaculateService(SimpleTcpService):
     def handle_caculate(self, data: bytes):
-        result = eval(data.decode())
+        try:
+            result = eval(data.decode())
+        except Exception as e:
+            result = f'Error: {e}'
         self.server.send(str(result).encode())
 
     def __init__(self, host: str = '127.0.0.1'):
