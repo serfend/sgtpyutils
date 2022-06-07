@@ -39,6 +39,9 @@ def test_caculator():
 def test_multi_lines():
     s = test_service_start()
     client = start_client(s)
+    client.send(b'1+1\n')
+    data = client.recv(1024)
+    assert data == b'2\n', 'single line content should return direct'
     client.send(b'''
 c = 1 + 1
     ''')

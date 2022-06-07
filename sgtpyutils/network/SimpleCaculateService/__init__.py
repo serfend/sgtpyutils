@@ -9,7 +9,9 @@ class SimpleCaculateService(SimpleTcpService):
         result = {}
         try:
             data = data.decode()
-            if data.find('\n') > -1:
+            first_line = data.find('\n')
+            # have at least 2 lines
+            if first_line > -1 and data.find('\n', first_line+1) > -1:
                 exec(data, results)
                 keys = [x for x in results if not x.startswith('_')]
                 for x in keys:
