@@ -48,6 +48,16 @@ class SimpleTcpService(threading.Thread):
             if self.on_message:
                 self.on_message(data)
 
+    def ensure_start(self):
+        if self.is_listening:
+            return
+        if not self.running:
+            self.start()
+        counter = 100
+        while not self.is_listening and counter:
+            time.sleep(0.1)
+            counter -= 1
+
     def __on_listen(self, is_start: bool):
         self.is_listening = is_start
         if is_start and self.on_listen_start:
@@ -55,7 +65,7 @@ class SimpleTcpService(threading.Thread):
         elif not is_start and self.on_listen_end:
             self.on_listen_end()
 
-    def __init__(self, on_message: Callable, host: str = '127.0.0.1', port: int = None):
+    def __init__(self, on_message: Callable, host: str = '127.0.0.1', port: int = None, ensure_start: bool = True):
         self.is_listening = False  # whether self-listening
         self.on_message: Callable = on_message
         self.on_listen_start: Callable = None
@@ -67,7 +77,11 @@ class SimpleTcpService(threading.Thread):
         self.port = self.generate_free(port)
         super().__init__()
         self.daemon = True  # as daemon thread default
+        if ensure_start:
+            self.ensure_start()
 
     def start(self) -> None:
+        if self.running:
+            return
         self.running = True
         return super().start()

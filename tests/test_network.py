@@ -8,10 +8,6 @@ from sgtpyutils.network.SimpleCaculateService import SimpleCaculateService
 def test_service_start():
     s = SimpleCaculateService()
     s.start()
-    counter = 100
-    while not s.is_listening and counter:
-        time.sleep(0.1)
-        counter -= 1
     assert s.is_listening == True
     return s
 
