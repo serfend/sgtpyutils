@@ -49,3 +49,17 @@ c = 1 + 1
     result = data.decode().strip()
     result = json.loads(result)
     assert 'c' in result and result['c'] == 2
+
+
+def test_exception():
+    s = test_service_start()
+    client = start_client(s)
+    client.send(b'print(invalid\n')
+    time.sleep(0.2)
+    client.send(b'print(invalid\n')
+    time.sleep(0.2)
+    client.send(b'print(invalid\n')
+    time.sleep(0.2)
+    data = client.recv(1024)
+    result = data.decode().strip()
+    return test_caculator()
