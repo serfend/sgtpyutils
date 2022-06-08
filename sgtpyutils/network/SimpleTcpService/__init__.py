@@ -15,6 +15,8 @@ class SimpleTcpService(threading.Thread):
         min_port = int(1001)
         if not port:
             s_port = random.Random().randint(min_port, max_port)
+        else:
+            s_port = port
         max_try_time = 1e3
         while max_try_time > 0:
             '''
@@ -24,6 +26,8 @@ class SimpleTcpService(threading.Thread):
                 server.bind((host, s_port))
                 break
             except Exception as e:
+                if port:
+                    raise e
                 s_port += 1
                 if s_port >= int(max_port):
                     s_port = min_port
