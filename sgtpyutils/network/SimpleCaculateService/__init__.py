@@ -1,10 +1,11 @@
 import json
-from ..SimpleTcpService import SimpleTcpService
+from ..SimpleTcpService import SimpleTcpService, MessageEventArgs
 from ...extensions import clazz
 
 
 class SimpleCaculateService(SimpleTcpService):
-    def handle_caculate(self, data: bytes):
+    def handle_caculate(self, event: MessageEventArgs):
+        data = event.data
         results = {}
         result = {}
         try:
@@ -21,7 +22,7 @@ class SimpleCaculateService(SimpleTcpService):
                 result = eval(data)
         except Exception as e:
             result = f'Error: {e}'
-        self.server.send(f'{result}\n'.encode())
+        event.connection.send(f'{result}\n'.encode())
 
     def __init__(self, host: str = '127.0.0.1'):
         return super().__init__(self.handle_caculate, host)

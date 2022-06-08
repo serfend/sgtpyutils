@@ -64,11 +64,12 @@ class SimpleTcpService(threading.Thread):
             if not data:
                 break
             if self.on_message:
-                self.on_message(MessageEventArgs(
-                    remote_host=remote_host,
+                e = MessageEventArgs(
+                    host=remote_host,
                     connection=connection,
                     data=data
-                ))
+                )
+                self.on_message(e)
         try:
             connection.close()
         except:
@@ -90,6 +91,8 @@ class SimpleTcpService(threading.Thread):
                                                connection=connection,
                                                remote_host=remote_host,
                                                )
+            except TimeoutError as e:
+                pass
             except Exception as e:
                 logger.info(f'TCPService:: listing stop for exception:{e}')
         self.__on_listen(False)
