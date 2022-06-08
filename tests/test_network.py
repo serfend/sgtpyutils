@@ -1,3 +1,4 @@
+from sgtpyutils.network.TcpClient import start_client
 import json
 import socket
 import random
@@ -13,16 +14,9 @@ def test_service_start():
     return s
 
 
-def start_client(s: SimpleCaculateService):
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    logger.info(f'start connect to local:{s.port}')
-    client.connect(('127.0.0.1', s.port))
-    return client
-
-
 def test_caculator():
     s = test_service_start()
-    client = start_client(s)
+    client = start_client(s.port)
 
     rnd = random.Random()
     for i in range(10):
@@ -38,7 +32,7 @@ def test_caculator():
 
 def test_multi_lines():
     s = test_service_start()
-    client = start_client(s)
+    client = start_client(s.port)
     client.send(b'1+1\n')
     data = client.recv(1024)
     assert data == b'2\n', 'single line content should return direct'
@@ -53,7 +47,7 @@ c = 1 + 1
 
 def test_exception():
     s = test_service_start()
-    client = start_client(s)
+    client = start_client(s.port)
     client.send(b'print(invalid\n')
     time.sleep(0.2)
     client.send(b'print(invalid\n')

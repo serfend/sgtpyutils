@@ -8,7 +8,7 @@ from ...logger import logger
 
 
 class ConnectionEventArgs:
-    def __init__(self, host: str, connection: socket):
+    def __init__(self, host: str, connection: socket.socket):
         self.host = host
         self.connection = connection
 
@@ -18,7 +18,7 @@ class MessageEventArgs(ConnectionEventArgs):
     a new message distribution
     '''
 
-    def __init__(self, host: str, connection: socket, data: bytes):
+    def __init__(self, host: str, connection: socket.socket, data: bytes):
         self.data = data
         super().__init__(
             host=host,
@@ -62,7 +62,7 @@ class SimpleTcpService(threading.Thread):
         self.socket = server
         return s_port
 
-    def handle_message(self, connection: socket, remote_host: str) -> None:
+    def __handle_message(self, connection: socket.socket, remote_host: str) -> None:
         while self.running:
             data = connection.recv(1024)
             if not data:
@@ -80,7 +80,7 @@ class SimpleTcpService(threading.Thread):
             pass
         logger.debug(f'TCPService:: connection closed from {remote_host}')
 
-    def handle_new_connection(self, connection: socket, remote_host: str) -> None:
+    def __handle_new_connection(self, connection: socket.socket, remote_host: str) -> None:
         logger.debug(
             f'TCPService:: connection establish from {remote_host}')
         if self.on_new_connection:
@@ -88,8 +88,10 @@ class SimpleTcpService(threading.Thread):
                 host=remote_host,
                 connection=connection
             )
-            self.on_new_connection(e)
-        self.ThreadPoolExecutor.submit(self.handle_message,
+            accept = self.on_new_connection(e)
+            if not accept:
+                return
+        self.ThreadPoolExecutor.submit(self.__handle_message,
                                        connection=connection,
                                        remote_host=remote_host,
                                        )
@@ -103,7 +105,7 @@ class SimpleTcpService(threading.Thread):
         while self.is_listening and self.running:
             try:
                 connection, remote_host = self.socket.accept()
-                self.handle_new_connection(connection, remote_host)
+                self.__handle_new_connection(connection, remote_host)
             except TimeoutError as e:
                 pass
             except Exception as e:
@@ -131,7 +133,7 @@ class SimpleTcpService(threading.Thread):
         self.is_listening = False  # whether self-listening
         self.on_message: Callable = on_message
         self.on_new_connection: Callable = on_new_connection
-        
+
         self.on_listen_start: Callable = None
         self.on_listen_end: Callable = None
         self.socket: socket.socket = None
