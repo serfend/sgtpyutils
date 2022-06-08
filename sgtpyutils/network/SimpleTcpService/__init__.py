@@ -26,6 +26,10 @@ class MessageEventArgs(ConnectionEventArgs):
         )
 
 
+class NewConnectionEventArgs(ConnectionEventArgs):
+    pass
+
+
 class SimpleTcpService(threading.Thread):
     def generate_free(self, port: int = None):
         '''
@@ -76,6 +80,20 @@ class SimpleTcpService(threading.Thread):
             pass
         logger.debug(f'TCPService:: connection closed from {remote_host}')
 
+    def handle_new_connection(self, connection: socket, remote_host: str) -> None:
+        logger.debug(
+            f'TCPService:: connection establish from {remote_host}')
+        if self.on_new_connection:
+            e = NewConnectionEventArgs(
+                host=remote_host,
+                connection=connection
+            )
+            self.on_new_connection(e)
+        self.ThreadPoolExecutor.submit(self.handle_message,
+                                       connection=connection,
+                                       remote_host=remote_host,
+                                       )
+
     def run(self) -> None:
         super().run()
         logger.debug(
@@ -85,12 +103,7 @@ class SimpleTcpService(threading.Thread):
         while self.is_listening and self.running:
             try:
                 connection, remote_host = self.socket.accept()
-                logger.debug(
-                    f'TCPService:: connection establish from {remote_host}')
-                self.ThreadPoolExecutor.submit(self.handle_message,
-                                               connection=connection,
-                                               remote_host=remote_host,
-                                               )
+                self.handle_new_connection(connection, remote_host)
             except TimeoutError as e:
                 pass
             except Exception as e:
@@ -114,9 +127,11 @@ class SimpleTcpService(threading.Thread):
         elif not is_start and self.on_listen_end:
             self.on_listen_end()
 
-    def __init__(self, on_message: Callable, host: str = '127.0.0.1', port: int = None, ensure_start: bool = True):
+    def __init__(self, on_message: Callable, on_new_connection: Callable = None, host: str = '127.0.0.1', port: int = None, ensure_start: bool = True):
         self.is_listening = False  # whether self-listening
         self.on_message: Callable = on_message
+        self.on_new_connection: Callable = on_new_connection
+        
         self.on_listen_start: Callable = None
         self.on_listen_end: Callable = None
         self.socket: socket.socket = None
