@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import time
 import random
 import socket
@@ -6,8 +7,32 @@ from typing import Callable
 from ...logger import logger
 
 
+class ConnectionEventArgs:
+    def __init__(self, host: str, connection: socket):
+        self.host = host
+        self.connection = connection
+
+
+class MessageEventArgs(ConnectionEventArgs):
+    '''
+    a new message distribution
+    '''
+
+    def __init__(self, host: str, connection: socket, data: bytes):
+        self.data = data
+        super().__init__(
+            host=host,
+            connection=connection
+        )
+
+
 class SimpleTcpService(threading.Thread):
     def generate_free(self, port: int = None):
+        '''
+        get a free port if port not specify
+        if port is occupied and port is specified , a exception would be raise
+        if port is occupied and port is NOT specified , new try for random port would be used
+        '''
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.settimeout(15)
         host = self.host
@@ -19,9 +44,6 @@ class SimpleTcpService(threading.Thread):
             s_port = port
         max_try_time = 1e3
         while max_try_time > 0:
-            '''
-            get a free port
-            '''
             try:
                 server.bind((host, s_port))
                 break
@@ -36,21 +58,41 @@ class SimpleTcpService(threading.Thread):
         self.socket = server
         return s_port
 
+    def handle_message(self, connection: socket, remote_host: str) -> None:
+        while self.running:
+            data = connection.recv(1024)
+            if not data:
+                break
+            if self.on_message:
+                self.on_message(MessageEventArgs(
+                    remote_host=remote_host,
+                    connection=connection,
+                    data=data
+                ))
+        try:
+            connection.close()
+        except:
+            pass
+        logger.debug(f'TCPService:: connection closed from {remote_host}')
+
     def run(self) -> None:
-        logger.debug(f'server start listening on {self.host}:{self.port}')
+        super().run()
+        logger.debug(
+            f'TCPService:: server start listening on {self.host}:{self.port}')
         self.__on_listen(True)
         self.socket.listen(1)
-        self.server, self.remote_host = self.socket.accept()
+        while self.is_listening and self.running:
+            try:
+                connection, remote_host = self.socket.accept()
+                logger.debug(
+                    f'TCPService:: connection establish from {remote_host}')
+                self.ThreadPoolExecutor.submit(self.handle_message,
+                                               connection=connection,
+                                               remote_host=remote_host,
+                                               )
+            except Exception as e:
+                logger.info(f'TCPService:: listing stop for exception:{e}')
         self.__on_listen(False)
-        logger.debug(f'connection establish from {self.remote_host}')
-        super().run()
-        while self.running:
-            data = self.server.recv(1024)
-            if not data:
-                logger.debug(f'connection closed from {self.remote_host}')
-                return
-            if self.on_message:
-                self.on_message(data)
 
     def ensure_start(self):
         if self.is_listening:
@@ -75,10 +117,10 @@ class SimpleTcpService(threading.Thread):
         self.on_listen_start: Callable = None
         self.on_listen_end: Callable = None
         self.socket: socket.socket = None
-        self.server: socket.socket
         self.host = host
         self.running = False
         self.port = self.generate_free(port)
+        self.ThreadPoolExecutor = ThreadPoolExecutor()
         super().__init__()
         self.daemon = True  # as daemon thread default
         if ensure_start:
