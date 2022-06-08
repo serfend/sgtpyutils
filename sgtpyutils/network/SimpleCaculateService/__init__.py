@@ -25,4 +25,7 @@ class SimpleCaculateService(SimpleTcpService):
         event.connection.send(f'{result}\n'.encode())
 
     def __init__(self, host: str = '127.0.0.1'):
-        return super().__init__(self.handle_caculate, host)
+        return super().__init__(
+            host=host,
+            on_message=self.handle_caculate
+        )

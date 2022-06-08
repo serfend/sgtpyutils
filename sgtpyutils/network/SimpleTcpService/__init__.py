@@ -105,11 +105,11 @@ class SimpleTcpService(threading.Thread):
         while self.is_listening and self.running:
             try:
                 connection, remote_host = self.socket.accept()
-                self.__handle_new_connection(connection, remote_host)
             except TimeoutError as e:
                 pass
             except Exception as e:
                 logger.info(f'TCPService:: listing stop for exception:{e}')
+            self.__handle_new_connection(connection, remote_host)
         self.__on_listen(False)
 
     def ensure_start(self):
