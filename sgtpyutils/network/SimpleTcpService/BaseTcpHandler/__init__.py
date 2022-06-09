@@ -6,10 +6,13 @@ from ..EventArgs import *
 class BaseTcpHandler(threading.Thread):
     def __init__(
         self,
-        on_message: Callable[[MessageEventArgs], None],
-        on_new_connection: Callable[[NewConnectionEventArgs], None] = None,
-        on_close_connection: Callable[[CloseConnectionEventArgs], None] = None,
-        daemon: bool | None = ...
+        on_message: Callable,
+        on_new_connection: Callable = None,
+        on_close_connection: Callable = None,
+        # on_message: Callable[[MessageEventArgs], None],
+        # on_new_connection: Callable[[NewConnectionEventArgs], None] = None,
+        # on_close_connection: Callable[[CloseConnectionEventArgs], None] = None,
+        daemon: bool = True
     ):
         self.on_message = on_message
         self.on_new_connection = on_new_connection
