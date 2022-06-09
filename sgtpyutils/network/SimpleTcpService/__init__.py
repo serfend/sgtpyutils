@@ -78,8 +78,7 @@ class SimpleTcpService(BaseTcpHandler):
                      NewConnectionEventArgs], None] = None,
                  on_close_connection: Callable[[
                      CloseConnectionEventArgs], None] = None,
-                 host: str = '127.0.0.1', port: int = None, ensure_start: bool = True,
-                 daemon: bool | None = ...):
+                 host: str = '127.0.0.1', port: int = None, ensure_start: bool = True):
         self.is_listening = False  # whether self-listening
         self.on_message: Callable = on_message
         self.on_new_connection: Callable = on_new_connection
@@ -97,9 +96,9 @@ class SimpleTcpService(BaseTcpHandler):
             on_message=on_message,
             on_new_connection=on_new_connection,
             on_close_connection=on_close_connection,
+            daemon=True  # as daemon thread default
         )
         self.threads: List[MessageHanlder] = []
-        self.daemon = True  # as daemon thread default
         if ensure_start:
             self.ensure_start()
 
