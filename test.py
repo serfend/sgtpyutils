@@ -1,2 +1,2 @@
-import tests.test_network
-tests.test_network.test_exception()
+import tests.test_config
+tests.test_config.test_set_get()
