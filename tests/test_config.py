@@ -24,7 +24,9 @@ def test_primary():
 def test_set_get():
     r = random.randint(int(1e7), int(1e8)-1)
     configuration.load(config_path=f'.tmp.{r}.conf')
+    p = configuration.get_config_path()
     configuration.set('test', 1)
     assert configuration.get('test', 1)
     configuration.set('test2', '1')
     assert configuration.get('test2', '1')
+    os.remove(p)
