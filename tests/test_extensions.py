@@ -4,6 +4,7 @@ def test_flat():
     items = ['1', '2', '3', '4', '5']
     assert items == flat(['1', ['2', '3'], '4', ['5']])
     assert items == flat([[['1']], ['2', ['3', '4'], '5']], 2)
+    assert items == flat([[['1']], ['2', ['3', ['4']], '5']])
 
 
 def test_find():

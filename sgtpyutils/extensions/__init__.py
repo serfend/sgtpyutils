@@ -9,19 +9,22 @@ def find(arr: List, predict: Callable) -> any:
     elif c_count == 2:
         x_predict = predict
     else:
-        raise ArgumentError(message = f'invalid param count {c_count}')
+        raise ArgumentError(message=f'invalid param count {c_count}')
     for index, i in enumerate(arr):
         if x_predict(i, index):
             return i
     return None
 
 
-def flat(arr: List, rank: int = 1) -> List:
-    if rank <= 0:
+def flat(arr: List, rank: int = -1) -> List:
+    if rank == 0:
         return arr
     result = []
     for i in arr:
-        result += flat(i, rank-1)
+        if isinstance(i, List):
+            result += flat(i, rank-1)
+        else:
+            result.append(i)
     return result
 
 
