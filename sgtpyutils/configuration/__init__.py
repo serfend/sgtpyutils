@@ -1,4 +1,4 @@
-from argparse import ArgumentError
+
 from ..logger import logger
 import json
 import os
@@ -54,5 +54,5 @@ def set(key: str, value: any = None):
     global config
     key = str(key)
     if not key:
-        raise ArgumentError('key must be set')
+        raise Exception('key must be set')
     config[key] = value
