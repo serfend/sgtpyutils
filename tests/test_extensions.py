@@ -1,4 +1,5 @@
 import sgtpyutils.extensions
+from sgtpyutils.extensions.itertools import run_cycle
 
 
 def test_flat():
@@ -39,3 +40,31 @@ def test_xor():
     v = b'~!3a@'
     assert xor(b'{\\rtf', key) == v
     assert xor([b'{\\', b'rtf', ], key) == v
+
+
+def test_cycle():
+    a = run_cycle('123abc456', 10)
+    result = [''.join(x[1]) for x in a]
+    assert len(result) == 10
+    assert result == ['11', '21', '31', 'a1',
+                      'b1', 'c1', '41', '51', '61', '12']
+
+    import string
+    a = run_cycle(string.digits, 10)
+    result = [''.join(x[1]) for x in a]
+    assert len(result) == 10
+    assert result == ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+    a = run_cycle(string.digits, length=1)
+    result = [''.join(x[1]) for x in a]
+    assert len(result) == 10
+    assert result == ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+    a = run_cycle(string.digits, length=2)
+    result = [''.join(x[1]) for x in a]
+    assert len(result) == 100
+    t = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    r = []
+    for i in range(10):
+        r += [f'{x}{i}' for x in t]
+    assert result == r

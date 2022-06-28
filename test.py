@@ -1,2 +1,2 @@
 import tests.test_extensions
-tests.test_extensions.test_xor()
+tests.test_extensions.test_cycle()
