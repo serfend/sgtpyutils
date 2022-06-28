@@ -71,7 +71,7 @@ class Maze:
         y = index // self.map_sizex
         return Pos(x, y)
 
-    def __init__(self, map_data: List, map_sizex: int, start: Pos | any, end: Pos | any, avoid: List[any] = None, allow: List[any] = None, directions: Dict = default_directions, max_result_count: int = 1):
+    def __init__(self, map_data: List, map_sizex: int, start: Pos | any, end: Pos | any, avoid: List[any] = None, allow: List[any] = None, directions: Dict = default_directions, direction_char_convert: Dict[any, any] = None, max_result_count: int = 1):
         '''
         map_data:       List draw a map
         map_sizex:      int pos-x of the map , to determine map's shape
@@ -81,12 +81,23 @@ class Maze:
         allow:List[any] when moving position's data in this , nothing happend. `avoid` and `allow` should only set one of them
         directions:Dict determine which direction is allowed to move , default is `up` `down` `left` `right`
         max_result_count:int if get enough result , then directly ret
+        direction_char_convert:Dict:you can use converter for convert default `w` to `up` etc.
         '''
-        self.data = map_data
+        is_data_str = False
+        if isinstance(map_data, int):
+            map_data = str(map_data)
+        if isinstance(map_data, str):
+            self.data = list(map_data)
+            is_data_str = True
+        elif isinstance(map_data, List):
+            self.data = map_data
+        else:
+            raise Exception('map_data should be str')
         self.map_sizex = map_sizex
         self.map_sizey = len(self.data) // self.map_sizex
         map_data_dict = {}
-        for index, key in enumerate(map_data):
+        for index, _ in enumerate(self.data):
+            key = self.data[index]
             if key in map_data_dict:
                 continue
             map_data_dict[key] = index
@@ -103,26 +114,31 @@ class Maze:
                 if not i in map_data:
                     self.end = i
                     index = self.get_index_by_pos(end)
-                    map_data[index] = i
+                    self.data[index] = i
                     logger.info(f'end-pos\'s data is set to char {i} at {end}')
                     break
         else:
             self.end = end
         self.directions = directions or Maze.default_directions
+        self.direction_char_convert = direction_char_convert or {}
         assert not (
             avoid and allow), '`avoid` and `allow` should set one of them'
         assert avoid or allow, '`avoid` and `allow` should set one of them'
-        if avoid:
-            avoid_dict = {}
-            for i in avoid:
-                avoid_dict[i] = True
-            self.avoid = avoid_dict
-        else:
+
+        if allow:
             for i in allow:
                 if i in map_data_dict:
                     del map_data_dict
-            self.avoid = map_data_dict
+            avoid = map_data_dict
+
+        avoid = list(avoid)
+        avoid_dict = {}
+        for i in avoid:
+            avoid_dict[i] = True
+        self.avoid = avoid_dict
         self.max_result_count = max_result_count
+        if is_data_str:
+            self.data = ''.join(self.data)
         self.init_solution()
         pass
 
@@ -163,7 +179,7 @@ class Maze:
 
     def __dump(self, dic: Dict, r: List):
         if dic == None or dic == True:
-            self.dump_result.append(''.join(r))
+            self.dump_result.append(''.join([str(x) for x in r]))
             return
         for k in dic:
             r.append(k)
@@ -183,12 +199,12 @@ class Maze:
         if k in self.visited:
             return None
         p = self.map_sizex*y+x
-        v = self.data[p:p+1]
-        if v in self.avoid:
-            return None
+        v = self.data[p]
         if v == self.end:
             self.result_count += 1
             return True
+        if v in self.avoid:
+            return None
         result = {}
         self.visited[k] = True
         for d in self.directions:
@@ -196,6 +212,8 @@ class Maze:
             dx, dy = self.directions[d]
             r = self.__explore(x+dx, y+dy)
             if r:
+                if d in self.direction_char_convert:
+                    d = self.direction_char_convert[d]
                 result[d] = r
             # paths.pop()
             if self.result_count >= self.max_result_count:
