@@ -82,6 +82,8 @@ CALG_AES = (ALG_CLASS_DATA_ENCRYPT | ALG_TYPE_BLOCK | ALG_SID_AES)
 
 print('CALG_MD5', hex(CALG_MD5))
 print('CALG_SHA1', hex(CALG_SHA1))
+
+
 class HashAlgo(Enum):
     md5 = CALG_MD5
     sha1 = CALG_SHA1
@@ -100,12 +102,12 @@ def get_hash(content: bytes, hash_name: HashAlgo = HashAlgo.md5, key: bytes = No
         hash_name: HashAlgo: named of hash
         key:bytes: if use rc4 etc. , key should be added
     '''
-    assert hasattr(hashlib, hash_name.name), 'no such hash algorithm'
-    f = getattr(hashlib, hash_name.name)
+    if isinstance(hash_name, HashAlgo):
+        hash_name = hash_name.name
+    assert hasattr(hashlib, isinstance), 'no such hash algorithm'
+    f = getattr(hashlib, hash_name)
     model = f()
     if isinstance(content, str):
         content = content.encode('ascii')
     model.update(content)
     return model.hexdigest()
-
-
