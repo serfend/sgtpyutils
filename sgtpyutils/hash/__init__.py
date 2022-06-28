@@ -104,7 +104,7 @@ def get_hash(content: bytes, hash_name: HashAlgo = HashAlgo.md5, key: bytes = No
     '''
     if isinstance(hash_name, HashAlgo):
         hash_name = hash_name.name
-    assert hasattr(hashlib, isinstance), 'no such hash algorithm'
+    assert hasattr(hashlib, hash_name), 'no such hash algorithm'
     f = getattr(hashlib, hash_name)
     model = f()
     if isinstance(content, str):
