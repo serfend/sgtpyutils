@@ -1,5 +1,6 @@
 import sgtpyutils.extensions
 from sgtpyutils.extensions.itertools import run_cycle
+from sgtpyutils.hash import HashAlgo, get_hash
 
 
 def test_flat():
@@ -68,3 +69,8 @@ def test_cycle():
     for i in range(10):
         r += [f'{x}{i}' for x in t]
     assert result == r
+
+
+def test_hash():
+    get_hash('123456', HashAlgo.md5) == 'e10adc3949ba59abbe56e057f20f883e'
+    get_hash('123456', HashAlgo.sha1) == '7c4a8d09ca3762af61e59520943dc26494f8941b'
