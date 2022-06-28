@@ -1,5 +1,12 @@
 from argparse import ArgumentError
+import itertools
 from typing import Callable, List
+from .typing import cast2bytes
+def xor(data: any, xor: any) -> bytes:
+    data = cast2bytes(data)
+    xor = cast2bytes(xor)
+    result = [a ^ b for (a, b) in zip(data, itertools.cycle(xor))]
+    return cast2bytes(result)
 
 
 def find(arr: List, predict: Callable) -> any:

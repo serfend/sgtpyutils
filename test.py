@@ -1,2 +1,2 @@
-import tests.test_config
-tests.test_config.test_set_get()
+import tests.test_extensions
+tests.test_extensions.test_xor()
