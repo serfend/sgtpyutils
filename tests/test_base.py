@@ -7,7 +7,6 @@ def test_base64():
     result = basexx.base64_decode(content=content, problem_table=problem_table)
     assert result == b'123456789012345678901234567890123'
 
-    result = result.decode('ascii')
     result = basexx.base64_encode(content=result, problem_table=problem_table)
     assert result == content
 
@@ -18,7 +17,6 @@ def test_base32():
     result = basexx.base32_decode(content=content, problem_table=problem_table)
     assert result == b'10n78ppn3ro00o70r2opop5s3roqq937'
 
-    result = result.decode('ascii')
     result = basexx.base32_encode(content=result, problem_table=problem_table)
     assert result == content
 
