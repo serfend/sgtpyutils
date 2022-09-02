@@ -1,5 +1,16 @@
 """Constants and membership tests for ASCII characters"""
 
+whitespace = ' \t\n\r\v\f'
+ascii_lowercase = 'abcdefghijklmnopqrstuvwxyz'
+ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+ascii_letters = ascii_lowercase + ascii_uppercase
+digits = '0123456789'
+hexdigits = digits + 'abcdef'
+octdigits = '01234567'
+punctuation = r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
+printable = digits + ascii_letters + punctuation + whitespace
+
+
 NUL = 0x00  # ^@
 SOH = 0x01  # ^A
 STX = 0x02  # ^B
