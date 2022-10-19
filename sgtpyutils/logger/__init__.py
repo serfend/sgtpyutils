@@ -16,6 +16,9 @@ def set_log_file(filename: str):
 
 
 def disable(file: bool = True, console: bool = True):
+    global logger
+    global file_handler
+    global console_handler
     if not logger:
         return
     if file:
@@ -45,6 +48,9 @@ redefine_level_name()
 
 def init():
     global LOG_FILE
+    global logger
+    global file_handler
+    global console_handler
     logger = logging.getLogger('common')  # 获取名为commomn的logger。
     fmt = '%(asctime)s [%(levelname)s] %(message)s :%(filename)s:%(lineno)s-%(levelno)s  %(pathname)s on(%(module)s.%(funcName)s) at %(process)d@%(threadName)s  '  # 定义日志格式
     file_handler = logging.handlers.RotatingFileHandler(
