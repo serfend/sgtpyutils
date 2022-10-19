@@ -5,7 +5,6 @@ logger: logging.Logger = None
 file_handler: logging.Handler = None
 console_handler: logging.Handler = None
 
-logger.removeHandler()
 LOG_FILE = 'log.log'
 
 
