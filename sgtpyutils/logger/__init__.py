@@ -16,6 +16,8 @@ def set_log_file(filename: str):
 
 
 def disable(file: bool = True, console: bool = True):
+    if not logger:
+        return
     if file:
         logger.removeHandler(file_handler)
     if console:
