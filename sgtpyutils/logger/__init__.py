@@ -2,7 +2,13 @@ import logging
 import logging.handlers
 import colorlog
 logger: logging.Logger = None
+handler: logging.Handler = None
+logger.removeHandler()
 LOG_FILE = 'log.log'
+
+
+def disable():
+    logger.removeHandler(handler)
 
 
 def redefine_level_name():
@@ -25,7 +31,6 @@ redefine_level_name()
 
 
 def init():
-    global logger
     global LOG_FILE
     logger = logging.getLogger('common')  # 获取名为commomn的logger。
     fmt = '%(asctime)s [%(levelname)s] %(message)s :%(filename)s:%(lineno)s-%(levelno)s  %(pathname)s on(%(module)s.%(funcName)s) at %(process)d@%(threadName)s  '  # 定义日志格式
