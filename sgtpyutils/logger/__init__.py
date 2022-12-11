@@ -48,6 +48,8 @@ redefine_level_name()
 def init():
     global LOG_FILE
     global logger
+    if logger:
+        disable()
     global file_handler
     global console_handler
     logger = logging.getLogger('common')  # 获取名为commomn的logger。
