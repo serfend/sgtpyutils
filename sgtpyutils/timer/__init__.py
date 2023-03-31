@@ -19,12 +19,22 @@ def create_timer(id: str = None):
 class Timer:
     def __init__(self) -> None:
         self.progress_total = 0
-        self.progress_current = 0
+        self._progress_current = 0
+        self.progress_last = 0
         self.start()
 
     def start(self) -> float:
         self.time_start = time.time()
         return self.time_start
+
+    @property
+    def progress_current(self):
+        return self._progress_current
+
+    @progress_current.setter
+    def progress_current(self, value):
+        self.progress_last = self.progress_current
+        self._progress_current = value
 
     @property
     def spent(self) -> float:

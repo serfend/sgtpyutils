@@ -18,4 +18,10 @@ def test_time_progrss():
     t.progress_total = 100
     time.sleep(1)
     t.progress_current = 50
+    assert t.progress_last == 0
     assert t.left_time > 0.8 and t.left_time < 2
+
+    time.sleep(0.1)
+    t.progress_current = 100
+    assert t.progress_last == 50
+    assert t.left_time < 0.1
