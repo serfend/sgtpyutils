@@ -48,9 +48,20 @@ class Timer:
 
     @property
     def progress_description(self) -> str:
-        p = self.progress
-        d = math.ceil(p * 10000) / 100
-        return f'{d}%'
+        '''
+        get description with format `progress%`
+        '''
+        p = self.progress * 100
+        v = '{:.2f}'.format(p)
+        return f'{v}%'
+
+    @property
+    def progress_description_with_value(self) -> str:
+        '''
+        get description with format `value/total(progress%)`
+        '''
+        d = self.progress_description
+        return f'{self.progress_current}/{self.progress_total}({self.progress_description})'
 
     @property
     def left_time(self) -> float:

@@ -25,3 +25,5 @@ def test_time_progrss():
     t.progress_current = 100
     assert t.progress_last == 50
     assert t.left_time < 0.1
+    assert t.progress_description in t.progress_description_with_value
+    assert t.progress_description == '100.00%'
