@@ -1,4 +1,4 @@
 pycryptodome
 colorlog
-openpyxl
+openpyxl >= 3.2
 argparse
