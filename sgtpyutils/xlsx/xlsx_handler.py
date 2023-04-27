@@ -2,12 +2,15 @@ import inspect
 from .openpyxl_extend import *
 import openpyxl
 from openpyxl.worksheet.worksheet import Worksheet
-# 用于对Excel文件进行操作
+
 
 import os
 
 
 class XlsxHandler:
+    '''
+    用于对Excel文件进行操作
+    '''
     use_new_sheet = True
     wb: openpyxl.Workbook = None
 
@@ -19,7 +22,6 @@ class XlsxHandler:
         else:
             print(f'warn:file not exist:{self.target_file},use in memory')
             self.wb = openpyxl.Workbook()
-
 
     def read(self, sheet: str = None, headers: dict = None, mapper: dict = None, value_convert: dict = None):
         '''
@@ -60,8 +62,6 @@ class XlsxHandler:
             return data.split(',')
         return data
 
-    
-
     def write(self, data: dict, sheet: str = None, append: bool = False):
         '''
         将数据写入到表格中
@@ -73,6 +73,12 @@ class XlsxHandler:
         headers = self.__get_headers_from_data(data)
         self.__build_headers(sh, headers)
         self.__build_values(sh, data, headers, append)
+        return self.save()
+
+    def save(self):
+        '''
+        保存当前工作簿
+        '''
         self.wb.save(self.target_file)
 
     def __build_values(self, sh: Worksheet, data: dict, headers: list, append: bool = False):
