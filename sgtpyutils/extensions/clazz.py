@@ -32,6 +32,22 @@ def get_data(item: object, fields_mapper: List) -> Dict:
     return result
 
 
+def get_fields(data: any, with_parent: bool = True):
+    '''
+    get instance fields
+    @param with_parent bool = True: whether to get parent fileds
+    '''
+    r = data.__dict__
+    result = {}
+    if not with_parent:
+        p = data.__class__.__base__().__dict__
+        for x in r:
+            if not x in p:
+                result[x] = r[x]
+    else:
+        result = r
+    return result
+
 def class2props(obj: object):
     '''
     将class转dict,以_开头的属性不要

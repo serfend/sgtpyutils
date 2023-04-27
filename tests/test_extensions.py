@@ -1,7 +1,22 @@
 import sgtpyutils.extensions
+import sgtpyutils.extensions.clazz
 from sgtpyutils.extensions.itertools import run_cycle
 from sgtpyutils.hash import HashAlgo, get_hash
 
+
+def test_fields():
+    class TestA:
+        def __init__(self) -> None:
+            self.A1 = 0
+            self.A2 = '0'
+
+    class TestB(TestA):
+        def __init__(self) -> None:
+            super().__init__()
+            self.B1 = '1'
+    fields = sgtpyutils.extensions.clazz.get_fields(TestB(), with_parent=False)
+    assert 'A1' not in fields
+    assert 'B1' in fields
 
 def test_flat():
     flat = sgtpyutils.extensions.flat

@@ -2,6 +2,9 @@
 import itertools
 from typing import Callable, List
 from .typing import cast2bytes
+
+
+
 def xor(data: any, xor: any) -> bytes:
     data = cast2bytes(data)
     xor = cast2bytes(xor)
