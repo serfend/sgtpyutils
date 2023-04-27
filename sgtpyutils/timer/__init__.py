@@ -72,4 +72,5 @@ class Timer:
         if p <= 0:
             return 0
         spent = self.spent
-        return spent / p - spent
+        result = spent / p - spent
+        return math.ceil(result * 100) / 100
