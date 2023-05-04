@@ -17,6 +17,11 @@ def test_fields():
     fields = sgtpyutils.extensions.clazz.get_fields(TestB(), with_parent=False)
     assert 'A1' not in fields
     assert 'B1' in fields
+    assert fields['B1'] == '1'
+    fields = sgtpyutils.extensions.clazz.get_fields(TestB(), with_parent=True)
+    assert 'A1' in fields
+    assert 'B1' in fields
+    assert fields['A1'] == 0
 
 def test_flat():
     flat = sgtpyutils.extensions.flat

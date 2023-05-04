@@ -37,16 +37,17 @@ def get_fields(data: any, with_parent: bool = True):
     get instance fields
     @param with_parent bool = True: whether to get parent fileds
     '''
-    r = data.__dict__
+    r = dict([[k, getattr(data, k)] for k in dir(data)])
     result = {}
     if not with_parent:
-        p = data.__class__.__base__().__dict__
+        p = dict([[k,None] for k in dir(data.__class__.__base__())])
         for x in r:
             if not x in p:
                 result[x] = r[x]
     else:
         result = r
     return result
+
 
 def class2props(obj: object):
     '''
