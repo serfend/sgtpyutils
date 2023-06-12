@@ -4,7 +4,6 @@ from typing import Callable, List
 from .typing import cast2bytes
 
 
-
 def xor(data: any, xor: any) -> bytes:
     data = cast2bytes(data)
     xor = cast2bytes(xor)
@@ -55,3 +54,12 @@ def distinct(arr: List, predict: Callable = None) -> List:
         dic[k] = True
         result.append(i)
     return result
+
+
+def list2dict(arr: List) -> dict:
+    '''
+    convert list to dictionary
+    @param arr : List[T] : data
+    @return : Dict[int,T] : dict[index:data.item]
+    '''
+    return dict([i, x] for i, x in enumerate(arr))

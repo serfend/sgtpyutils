@@ -94,3 +94,20 @@ def test_cycle():
 def test_hash():
     get_hash('123456', HashAlgo.md5) == 'e10adc3949ba59abbe56e057f20f883e'
     get_hash('123456', HashAlgo.sha1) == '7c4a8d09ca3762af61e59520943dc26494f8941b'
+
+def test_dict2obj():
+    class X:
+        def __init__(self) -> None:
+            self.a = 0
+    x = {'a':1}
+
+    dict2obj = sgtpyutils.extensions.clazz.dict2obj
+    x:X = dict2obj(X(),x)
+    assert x.a == 1
+def test_list2dict():
+    a = [2,4,7]
+    list2dict = sgtpyutils.extensions.list2dict
+    x = list2dict(a)
+    assert x.get(0) == 2
+    assert x.get(1) == 4
+    assert x.get(2) == 7
