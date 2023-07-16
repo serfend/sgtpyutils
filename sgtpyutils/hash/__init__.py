@@ -1,3 +1,6 @@
+from sgtpyutils.logger import logger
+from sgtpyutils.ascii import printable
+from sgtpyutils.extensions.itertools import run_cycle
 from enum import Enum
 import hashlib
 
@@ -80,9 +83,6 @@ CALG_AES_192 = (ALG_CLASS_DATA_ENCRYPT | ALG_TYPE_BLOCK | ALG_SID_AES_192)
 CALG_AES_256 = (ALG_CLASS_DATA_ENCRYPT | ALG_TYPE_BLOCK | ALG_SID_AES_256)
 CALG_AES = (ALG_CLASS_DATA_ENCRYPT | ALG_TYPE_BLOCK | ALG_SID_AES)
 
-print('CALG_MD5', hex(CALG_MD5))
-print('CALG_SHA1', hex(CALG_SHA1))
-
 
 class HashAlgo(Enum):
     md5 = CALG_MD5
@@ -96,11 +96,9 @@ class HashAlgo(Enum):
 def get_hash(content: bytes, hash_name: HashAlgo = HashAlgo.md5, key: bytes = None) -> str:
     '''
       get hexdigest of a content
-
-      Arguments:
-        content:bytes: str|bytes
-        hash_name: HashAlgo: named of hash
-        key:bytes: if use rc4 etc. , key should be added
+      @content:bytes: str|bytes
+      @hash_name: HashAlgo: named of hash
+      @key:bytes: if use rc4 etc. , key should be added
     '''
     if isinstance(hash_name, HashAlgo):
         hash_name = hash_name.name
@@ -111,3 +109,47 @@ def get_hash(content: bytes, hash_name: HashAlgo = HashAlgo.md5, key: bytes = No
         content = content.encode('ascii')
     model.update(content)
     return model.hexdigest()
+
+
+def brute_hash(target: str, hash_name: HashAlgo = HashAlgo.md5, table: str = None, brute_length: int = 8, interval_step=123456, key: bytes = None) -> str:
+    '''
+    to brute hash raw content
+    @target:str:target-string after hash
+    @hash_name:HashAlgo: named of hash
+    @table:str: chars for enum.
+    @brute_length:int: max length for attempt
+    @interval_step: show log every x steps
+    @key:bytes: if use rc4 etc. , key should be added
+    @return:str:raw-content of such hash
+    '''
+    def func(raw: str) -> str:
+        return get_hash(raw, hash_name, key)
+    return brute_func(
+        target=target,
+        func=func,
+        table=table,
+        brute_length=brute_length,
+        interval_step=interval_step
+    )
+
+
+def brute_func(target: str, func: callable, table: str = None, brute_length: int = 8, interval_step: int = 123456) -> str:
+    '''
+    to brute result from raw content
+    @target:str:str:target-string after run
+    @func:callble[str,str]:handler function
+    @table:str: chars for enum.
+    @brute_length:int: max length for attempt
+    @interval_step:int: show log every x steps
+    @return:str:raw-content of such function
+    '''
+    table = table or printable
+    for index, i in run_cycle(table=table, length=brute_length):
+        if index % interval_step == 0:
+            logger.debug(f'running...:{i}')
+        base = ''.join(i)
+        target_string = f'{base}'
+        if func(target_string) == target:
+            logger.info(f'found result::{target_string}')
+            return target_string
+    return None
