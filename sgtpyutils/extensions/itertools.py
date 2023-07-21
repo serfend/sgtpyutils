@@ -6,6 +6,20 @@ def get_end_by_length(table: any, length: int):
     return len(table) ** length
 
 
+def run_cycle_full(table: List, end: int = -1, length: int = -1, start: int = 0):
+    '''
+    see run_cycle.
+    equal to `for i in range(length):run_cycle(i...)`
+    '''
+    if length <= 0:
+        return run_cycle(table, end, length, start)
+    cur_index = 0
+    for i in range(length):
+        x_length = i+1
+        for index, x in run_cycle(table, end, x_length, start):
+            yield (cur_index + index, x)
+        cur_index += (index+1) # accumulate last cycle
+
 def run_cycle(table: List, end: int = -1, length: int = -1, start: int = 0):
     '''
     get a iter of tables-cycle
