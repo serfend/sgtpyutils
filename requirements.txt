@@ -3,3 +3,4 @@ colorlog
 openpyxl >= 3.1.0
 argparse
 httpx[http2]
+redis
