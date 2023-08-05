@@ -1,8 +1,22 @@
+import random
 from sgtpyutils.logger import logger
 import httpx
+from .UserAgent import *
+ua_generator = FakeUserAgent(browsers=['chrome'], os='linux')
+user_agent_pool = [
+    ua_generator.random
+]
+
+def __get_default_header_arg(**kwargs):
+    headers = kwargs.get('headers') or {} # 设置默认headers
+    headers['User-Agent'] = headers.get('User-Agent') or random.choice(
+        user_agent_pool)
+    kwargs['headers'] = headers
+    return kwargs
 
 def get_default_args(**kwargs):
     kwargs['timeout'] = kwargs.get('timeout') or 5
+    kwargs = __get_default_header_arg(**kwargs)
     return kwargs
 
 
@@ -30,7 +44,8 @@ async def send_with_async(method: str, url: str, proxy: dict = None, **kwargs) -
             logger.error(msg)
             return None
         except Exception as ex:
-            logger.error(f"fail to request in httpx({method} -> {url}):[{type(ex).__name__}]{ex}")
+            logger.error(
+                f"fail to request in httpx({method} -> {url}):[{type(ex).__name__}]{ex}")
             return None
 
 

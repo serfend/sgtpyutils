@@ -1,2 +1,2 @@
-from tests.test_iter import test_iter as func 
+from tests.test_network.test_httpx import test_baidu as func 
 func()
