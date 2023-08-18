@@ -6,11 +6,11 @@ import json
 from subprocess import check_call, check_output
 from tarfile import TarFile
 
-from dateutil.zoneinfo import METADATA_FN, ZONEFILENAME
+from .dateutil.zoneinfo import METADATA_FN, ZONEFILENAME
 
 
 def rebuild(filename, tag=None, format="gz", zonegroups=[], metadata=None):
-    """Rebuild the internal timezone info in dateutil/zoneinfo/zoneinfo*tar*
+    """Rebuild the internal timezone info in .dateutil/zoneinfo/zoneinfo*tar*
 
     filename is the timezone tarball from ``ftp.iana.org/tz``.
 
@@ -43,7 +43,7 @@ def _run_zic(zonedir, filepaths):
 
     Recent versions of ``zic`` default to ``-b slim``, while older versions
     don't even have the ``-b`` option (but default to "fat" binaries). The
-    current version of dateutil does not support Version 2+ TZif files, which
+    current version of .dateutil does not support Version 2+ TZif files, which
     causes problems when used in conjunction with "slim" binaries, so this
     function is used to ensure that we always get a "fat" binary.
     """

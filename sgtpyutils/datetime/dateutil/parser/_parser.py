@@ -600,8 +600,8 @@ class parser(object):
             .. doctest::
                :options: +NORMALIZE_WHITESPACE
 
-                >>> from dateutil.parser import parse
-                >>> from dateutil.tz import gettz
+                >>> from .dateutil.parser import parse
+                >>> from .dateutil.tz import gettz
                 >>> tzinfos = {"BRST": -7200, "CST": gettz("America/Chicago")}
                 >>> parse("2012-01-19 17:21:00 BRST", tzinfos=tzinfos)
                 datetime.datetime(2012, 1, 19, 17, 21, tzinfo=tzoffset(u'BRST', -7200))
@@ -699,7 +699,7 @@ class parser(object):
 
             .. doctest::
 
-                >>> from dateutil.parser import parse
+                >>> from .dateutil.parser import parse
                 >>> parse("Today is January 1, 2047 at 8:21:00AM", fuzzy_with_tokens=True)
                 (datetime.datetime(2047, 1, 1, 8, 21), (u'Today is ', u' ', u'at '))
 
@@ -1306,8 +1306,8 @@ def parse(timestr, parserinfo=None, **kwargs):
         .. doctest::
            :options: +NORMALIZE_WHITESPACE
 
-            >>> from dateutil.parser import parse
-            >>> from dateutil.tz import gettz
+            >>> from .dateutil.parser import parse
+            >>> from .dateutil.tz import gettz
             >>> tzinfos = {"BRST": -7200, "CST": gettz("America/Chicago")}
             >>> parse("2012-01-19 17:21:00 BRST", tzinfos=tzinfos)
             datetime.datetime(2012, 1, 19, 17, 21, tzinfo=tzoffset(u'BRST', -7200))
@@ -1343,7 +1343,7 @@ def parse(timestr, parserinfo=None, **kwargs):
 
         .. doctest::
 
-            >>> from dateutil.parser import parse
+            >>> from .dateutil.parser import parse
             >>> parse("Today is January 1, 2047 at 8:21:00AM", fuzzy_with_tokens=True)
             (datetime.datetime(2047, 1, 1, 8, 21), (u'Today is ', u' ', u'at '))
 
@@ -1498,7 +1498,7 @@ class _tzparser(object):
 
                 # This was a made-up format that is not in normal use
                 warn(('Parsed time zone "%s"' % tzstr) +
-                     'is in a non-standard dateutil-specific format, which ' +
+                     'is in a non-standard .dateutil-specific format, which ' +
                      'is now deprecated; support for parsing this format ' +
                      'will be removed in future versions. It is recommended ' +
                      'that you switch to a standard format like the GNU ' +

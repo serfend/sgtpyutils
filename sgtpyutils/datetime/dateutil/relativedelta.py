@@ -89,7 +89,7 @@ class relativedelta(object):
     For example
 
     >>> from datetime import datetime
-    >>> from dateutil.relativedelta import relativedelta, MO
+    >>> from .dateutil.relativedelta import relativedelta, MO
     >>> dt = datetime(2018, 4, 9, 13, 37, 0)
     >>> delta = relativedelta(hours=25, day=1, weekday=MO(1))
     >>> dt + delta

@@ -48,7 +48,7 @@ class tzutc(datetime.tzinfo):
     .. doctest::
 
         >>> from datetime import *
-        >>> from dateutil.tz import *
+        >>> from .dateutil.tz import *
 
         >>> datetime.now()
         datetime.datetime(2003, 9, 27, 9, 40, 1, 521290)
@@ -65,7 +65,7 @@ class tzutc(datetime.tzinfo):
 
         .. doctest::
 
-            >>> from dateutil.tz import tzutc, UTC
+            >>> from .dateutil.tz import tzutc, UTC
             >>> tzutc() is tzutc()
             True
             >>> tzutc() is UTC
@@ -420,7 +420,7 @@ class tzfile(_tzinfo):
 
     .. testsetup:: tzfile
 
-        from dateutil.tz import gettz
+        from .dateutil.tz import gettz
         from datetime import datetime
 
     .. doctest:: tzfile
@@ -928,14 +928,14 @@ class tzrange(tzrangebase):
 
     .. testsetup:: tzrange
 
-        from dateutil.tz import tzrange, tzstr
+        from .dateutil.tz import tzrange, tzstr
 
     .. doctest:: tzrange
 
         >>> tzstr('EST5EDT') == tzrange("EST", -18000, "EDT")
         True
 
-        >>> from dateutil.relativedelta import *
+        >>> from .dateutil.relativedelta import *
         >>> range1 = tzrange("EST", -18000, "EDT")
         >>> range2 = tzrange("EST", -18000, "EDT", -14400,
         ...                  relativedelta(hours=+2, month=4, day=1,
@@ -951,7 +951,7 @@ class tzrange(tzrangebase):
                  start=None, end=None):
 
         global relativedelta
-        from dateutil import relativedelta
+        from .dateutil import relativedelta
 
         self._std_abbr = stdabbr
         self._dst_abbr = dstabbr
@@ -1078,7 +1078,7 @@ class tzstr(tzrange):
     """
     def __init__(self, s, posix_offset=False):
         global parser
-        from dateutil.parser import _parser as parser
+        from .dateutil.parser import _parser as parser
 
         self._s = s
 
@@ -1109,7 +1109,7 @@ class tzstr(tzrange):
         self.hasdst = bool(self._start_delta)
 
     def _delta(self, x, isend=0):
-        from dateutil import relativedelta
+        from .dateutil import relativedelta
         kwargs = {}
         if x.month is not None:
             kwargs["month"] = x.month
@@ -1263,7 +1263,7 @@ class tzical(object):
     """
     def __init__(self, fileobj):
         global rrule
-        from dateutil import rrule
+        from .dateutil import rrule
 
         if isinstance(fileobj, string_types):
             self._s = fileobj
@@ -1651,7 +1651,7 @@ def __get_gettz():
                                 tz = None
 
                         if not tz:
-                            from dateutil.zoneinfo import get_zonefile_instance
+                            from .dateutil.zoneinfo import get_zonefile_instance
                             tz = get_zonefile_instance().get(name)
 
                         if not tz:
@@ -1770,7 +1770,7 @@ def resolve_imaginary(dt):
 
     .. doctest::
 
-        >>> from dateutil import tz
+        >>> from .dateutil import tz
         >>> from datetime import datetime
         >>> NYC = tz.gettz('America/New_York')
         >>> print(tz.resolve_imaginary(datetime(2017, 3, 12, 2, 30, tzinfo=NYC)))

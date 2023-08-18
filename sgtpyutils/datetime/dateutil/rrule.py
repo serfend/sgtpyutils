@@ -326,7 +326,7 @@ class rrule(rrulebase):
         This can lead to possibly surprising behavior when, for example, the
         start date occurs at the end of the month:
 
-        >>> from dateutil.rrule import rrule, MONTHLY
+        >>> from .dateutil.rrule import rrule, MONTHLY
         >>> from datetime import datetime
         >>> start_date = datetime(2014, 12, 31)
         >>> list(rrule(freq=MONTHLY, count=4, dtstart=start_date))
@@ -474,7 +474,7 @@ class rrule(rrulebase):
 
         if count is not None and until:
             warn("Using both 'count' and 'until' is inconsistent with RFC 5545"
-                 " and has been deprecated in dateutil. Future versions will "
+                 " and has been deprecated in .dateutil. Future versions will "
                  "raise an error.", DeprecationWarning)
 
         if wkst is None:
@@ -541,7 +541,7 @@ class rrule(rrulebase):
         # byeaster
         if byeaster is not None:
             if not easter:
-                from dateutil import easter
+                from ..dateutil import easter
             if isinstance(byeaster, integer_types):
                 self._byeaster = (byeaster,)
             else:
@@ -701,7 +701,7 @@ class rrule(rrulebase):
         """
         Output a string that would generate this RRULE if passed to rrulestr.
         This is mostly compatible with RFC5545, except for the
-        dateutil-specific extension BYEASTER.
+        .dateutil-specific extension BYEASTER.
         """
 
         output = []
@@ -1495,7 +1495,7 @@ class _rrulestr(object):
     def _handle_UNTIL(self, rrkwargs, name, value, **kwargs):
         global parser
         if not parser:
-            from dateutil import parser
+            from ..dateutil import parser
         try:
             rrkwargs["until"] = parser.parse(value,
                                              ignoretz=kwargs.get("ignoretz"),
@@ -1564,7 +1564,7 @@ class _rrulestr(object):
                           ignoretz, tzids, tzinfos):
         global parser
         if not parser:
-            from dateutil import parser
+            from ..dateutil import parser
 
         datevals = []
         value_found = False
@@ -1701,7 +1701,7 @@ class _rrulestr(object):
             if (forceset or len(rrulevals) > 1 or rdatevals
                     or exrulevals or exdatevals):
                 if not parser and (rdatevals or exdatevals):
-                    from dateutil import parser
+                    from ..dateutil import parser
                 rset = rruleset(cache=cache)
                 for value in rrulevals:
                     rset.rrule(self._parse_rfc_rrule(value, dtstart=dtstart,
