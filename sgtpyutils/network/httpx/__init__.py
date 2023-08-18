@@ -7,12 +7,14 @@ user_agent_pool = [
     ua_generator.random
 ]
 
+
 def __get_default_header_arg(**kwargs):
-    headers = kwargs.get('headers') or {} # 设置默认headers
+    headers = kwargs.get('headers') or {}  # 设置默认headers
     headers['User-Agent'] = headers.get('User-Agent') or random.choice(
         user_agent_pool)
     kwargs['headers'] = headers
     return kwargs
+
 
 def get_default_args(**kwargs):
     kwargs['timeout'] = kwargs.get('timeout') or 5
@@ -54,7 +56,7 @@ async def get_url(url: str, proxy: dict = None, **kwargs) -> str:
     以get方式发出请求，并将返回的结果以plaintext方式处理
     '''
     r = await send_with_async('get', url, proxy, **kwargs)
-    return r.text
+    return r.text if hasattr(r, 'text') else None
 
 
 async def get_api(url, proxy: dict = None, **kwargs) -> dict:
