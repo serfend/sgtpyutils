@@ -90,3 +90,25 @@ class DateTime(datetime.datetime):
         if v_time < 30:
             return f'{int(v_time/7)}周{suffix}'
         return f'{int(v_time)}天{suffix}'
+
+    def __add__(self, other):
+        t = datetime.timedelta
+        if isinstance(other, int) or isinstance(other, float):
+            other = t(milliseconds=other)
+        return super().__add__(other)
+
+    def __sub__(self, other):
+        t = datetime.timedelta
+        if isinstance(other, int) or isinstance(other, float):
+            other = t(milliseconds=other)
+        elif isinstance(other, str):
+            other = DateTime.fromstring(other)
+        return super().__sub__(other)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, int) or isinstance(other, float):
+            other = DateTime.fromtimestamp(other)
+        elif isinstance(other, str):
+            other = DateTime.fromstring(other)
+
+        return super().__eq__(other)

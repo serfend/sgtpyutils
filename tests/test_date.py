@@ -22,3 +22,7 @@ def test_date():
 
     assert DateTime.fromtimestamp(t / 1e3).tostring() == date_string
     assert DateTime.fromtimestamp(t).tostring() == date_string
+
+
+    yesterday = x - 86400e3
+    assert yesterday == '2023-01-15 16:11:17.355789'
