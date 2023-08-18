@@ -18,7 +18,7 @@ def test_date():
     assert x.toRelativeTime(x2) == '55分钟前'
 
     t = x.getTime()
-    assert 1673856677355 == t
+    assert 1673885477355 == t
 
     assert DateTime.fromtimestamp(t / 1e3).tostring() == date_string
     assert DateTime.fromtimestamp(t).tostring() == date_string

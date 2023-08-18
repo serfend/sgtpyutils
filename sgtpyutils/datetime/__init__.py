@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import overload
 import datetime
+import time
 from .dateutil.parser import parser, parserinfo
 
 
@@ -40,7 +41,11 @@ class DateTime(datetime.datetime):
         '''
         获取毫秒时间戳
         '''
-        r = self.timestamp() * 1e3
+        delta = time.timezone if self.tzinfo is None else 0
+
+        # 将时间转换为UTC+0
+        r = self.timestamp() - delta
+        r *= 1e3  # 转换为毫秒
         return int(r)
 
     def tostring(self, format: str = '%Y-%m-%d %H:%M:%S') -> str:
@@ -53,6 +58,10 @@ class DateTime(datetime.datetime):
             # 表示使用的毫秒制
             t /= 1e3
 
+        # 将时间转换为UTC+0
+        delta = time.timezone if tz is None else 0
+        t += delta
+
         return super().fromtimestamp(t, tz)
 
     def toRelativeTime(self, target: DateTime = ..., show_full_date_if_over: int = 30) -> str:
@@ -62,7 +71,7 @@ class DateTime(datetime.datetime):
         @param show_full_date_if_over:int:当相差时间（天数）过多时返回绝对时间
         '''
         if target is Ellipsis:
-            target = DateTime.now()
+            target = DateTime.now(tz=self.tzinfo)
         r = target - self
         delta_time = r.days + r.seconds / 86400
         if delta_time > show_full_date_if_over:
