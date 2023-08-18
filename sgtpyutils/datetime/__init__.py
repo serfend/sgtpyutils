@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import overload
 import datetime
-import dateutil.parser
+from .dateutil import parser
 
 
 class DateTime(datetime.datetime):
@@ -30,7 +30,7 @@ class DateTime(datetime.datetime):
 
     @classmethod
     def fromstring(cls, date_str: str):
-        r = dateutil.parser.parse(date_str)
+        r = parser.parse(date_str)
         return cls(r)
 
     def getTime(self) -> int:
