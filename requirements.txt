@@ -5,4 +5,4 @@ argparse
 httpx[http2]
 redis
 fake-useragent
-dateutil
+
