@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import overload
 import datetime
-from .dateutil import parser
+from .dateutil.parser import parser, parserinfo
 
 
 class DateTime(datetime.datetime):
@@ -29,8 +29,11 @@ class DateTime(datetime.datetime):
         return t
 
     @classmethod
-    def fromstring(cls, date_str: str):
-        r = parser.parse(date_str)
+    def fromstring(cls, date_str: str, dayfirst=False, yearfirst=False):
+        r = parser(info=parserinfo(
+            dayfirst=dayfirst,
+            yearfirst=yearfirst,
+        )).parse(date_str)
         return cls(r)
 
     def getTime(self) -> int:
