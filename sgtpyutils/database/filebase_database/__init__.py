@@ -7,13 +7,20 @@ import json
 
 
 class Database:
+    '''
+    基于文件的db，仅允许加载json文件
+    '''
     cache: dict[str, dict] = {}
 
     def __init__(self, database: str) -> None:
+        self.is_abs = pathlib2.Path(database).is_absolute()
         self.database = database
-        root_path = pathlib2.Path(
-            __file__).parent.parent.parent.joinpath('database')
-        self.base_path = f'{root_path}{os.sep}'
+        if self.is_abs:
+            self.base_path = ''
+        else:
+            root_path = pathlib2.Path(
+                __file__).parent.parent.parent.joinpath('database')
+            self.base_path = f'{root_path}{os.sep}'
         self.load_db()
 
     def check_file(self):
@@ -43,6 +50,9 @@ class Database:
 
     @property
     def database_filename(self) -> str:
+        '''
+        only allow .json file
+        '''
         return f'{self.base_path}{self.database}.json'
 
     @property
