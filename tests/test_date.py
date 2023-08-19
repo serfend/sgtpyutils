@@ -23,8 +23,13 @@ def test_date():
     assert DateTime.fromtimestamp(t / 1e3).tostring() == date_string
     assert DateTime.fromtimestamp(t).tostring() == date_string
 
-
     yesterday = x - 86400e3
     assert yesterday == '2023-01-15 16:11:17.355789'
 
     assert yesterday.date() == '2023-01-15'
+
+
+def test_offset_date():
+    x1 = DateTime('2023-08-19T15:00:00+08:00')
+    x2 = DateTime('2023-08-19 15:00:00')
+    assert (x2 - x1).total_seconds() == 0

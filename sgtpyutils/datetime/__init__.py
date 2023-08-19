@@ -3,6 +3,7 @@ from typing import overload
 import datetime
 import time
 from .dateutil.parser import parser, parserinfo
+_EPOCH = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
 
 
 class DateTime(datetime.datetime):
@@ -34,6 +35,10 @@ class DateTime(datetime.datetime):
             x: datetime.date = year
             return DateTime(x.year, x.month, x.day, 0, 0, 0, 0, None, fold=0)
 
+        if tzinfo is None:  # 无时区时，默认使用当前时区
+            d = datetime.timedelta(seconds=-time.timezone)
+            tzinfo = datetime.timezone(d)
+            
         t = super().__new__(cls, year, month, day, hour, minute,
                             second, microsecond, tzinfo, fold=fold)
         return t
@@ -44,13 +49,15 @@ class DateTime(datetime.datetime):
             dayfirst=dayfirst,
             yearfirst=yearfirst,
         )).parse(date_str)
+
         return cls(r)
 
     def getTime(self) -> int:
         '''
         获取毫秒时间戳
         '''
-        delta = time.timezone if self.tzinfo is None else 0
+        # 若未定义当前时区，则使用当前计算机时区
+        delta = time.timezone if self.tzinfo is None else -self.utcoffset().total_seconds()
 
         # 将时间转换为UTC+0
         r = self.timestamp() - delta
@@ -115,6 +122,15 @@ class DateTime(datetime.datetime):
             other = t(milliseconds=other)
         elif isinstance(other, str):
             other = DateTime.fromstring(other)
+
+        if isinstance(other, t):
+            return super().__sub__(other)
+        if not isinstance(other, datetime.datetime):
+            raise Exception(f'invalid type in date:{type(other)}')
+        if not other.tzinfo is None and self.tzinfo is None:
+            other = DateTime.fromtimestamp(other.timestamp())
+            pass
+
         return super().__sub__(other)
 
     def __eq__(self, other: object) -> bool:
