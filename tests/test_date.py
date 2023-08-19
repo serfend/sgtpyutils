@@ -33,3 +33,12 @@ def test_offset_date():
     x1 = DateTime('2023-08-19T15:00:00+08:00')
     x2 = DateTime('2023-08-19 15:00:00')
     assert (x2 - x1).total_seconds() == 0
+
+def test_utc_format():
+    x1 = DateTime('2023-08-19T15:12:34.123+08:00')
+    assert x1.tostring(DateTime.Format.UTC_MIL) == '2023-08-19T15:12:34.123000+0800'
+    assert x1.tostring(DateTime.Format.UTC) == '2023-08-19T15:12:34+0800'
+
+    x1 = DateTime('2023-08-19 15:12:34.123')
+    assert x1.tostring(DateTime.Format.UTC_MIL) == '2023-08-19T15:12:34.123000+0800'
+    assert x1.tostring(DateTime.Format.UTC) == '2023-08-19T15:12:34+0800'

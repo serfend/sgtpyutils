@@ -1,4 +1,5 @@
 from __future__ import annotations
+import enum
 from typing import overload
 import datetime
 import time
@@ -6,7 +7,16 @@ from .dateutil.parser import parser, parserinfo
 _EPOCH = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
 
 
+class DateFormat(enum.Enum):
+    DEFAULT = '%Y-%m-%d %H:%M:%S'
+    DEFAULT_MIL = '%Y-%m-%d %H:%M:%S'
+    UTC = '%Y-%m-%dT%H:%M:%S%z'
+    UTC_MIL = '%Y-%m-%dT%H:%M:%S.%f%z'
+
+
 class DateTime(datetime.datetime):
+    Format = DateFormat
+
     @overload
     def __new__(cls, date: datetime.datetime):
         ...
@@ -38,7 +48,7 @@ class DateTime(datetime.datetime):
         if tzinfo is None:  # 无时区时，默认使用当前时区
             d = datetime.timedelta(seconds=-time.timezone)
             tzinfo = datetime.timezone(d)
-            
+
         t = super().__new__(cls, year, month, day, hour, minute,
                             second, microsecond, tzinfo, fold=fold)
         return t
@@ -64,7 +74,9 @@ class DateTime(datetime.datetime):
         r *= 1e3  # 转换为毫秒
         return int(r)
 
-    def tostring(self, format: str = '%Y-%m-%d %H:%M:%S') -> str:
+    def tostring(self, format: str = DateFormat.DEFAULT) -> str:
+        if isinstance(format, DateFormat):
+            format = format.value
         return self.strftime(format)
 
     def date(self) -> DateTime:
