@@ -26,3 +26,5 @@ def test_date():
 
     yesterday = x - 86400e3
     assert yesterday == '2023-01-15 16:11:17.355789'
+
+    assert yesterday.date() == '2023-01-15'

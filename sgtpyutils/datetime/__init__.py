@@ -11,6 +11,10 @@ class DateTime(datetime.datetime):
         ...
 
     @overload
+    def __new__(cls, date: datetime.date):
+        ...
+
+    @overload
     def __new__(cls, date: str):
         ...
 
@@ -25,6 +29,11 @@ class DateTime(datetime.datetime):
         if isinstance(year, datetime.datetime):
             x = year
             return DateTime(x.year, x.month, x.day, x.hour, x.minute, x.second, x.microsecond, x.tzinfo, fold=x.fold)
+
+        elif isinstance(year, datetime.date):
+            x: datetime.date = year
+            return DateTime(x.year, x.month, x.day, 0, 0, 0, 0, None, fold=0)
+
         t = super().__new__(cls, year, month, day, hour, minute,
                             second, microsecond, tzinfo, fold=fold)
         return t
@@ -50,6 +59,9 @@ class DateTime(datetime.datetime):
 
     def tostring(self, format: str = '%Y-%m-%d %H:%M:%S') -> str:
         return self.strftime(format)
+
+    def date(self) -> DateTime:
+        return DateTime(super().date())
 
     @classmethod
     def fromtimestamp(cls, t: int, tz=None):
