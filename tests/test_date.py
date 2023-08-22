@@ -16,6 +16,8 @@ def test_default_datetime():
 
     assert delta1 == delta2, 'getTime应将时间统一'
 
+    assert DateTime.today() == DateTime().date()
+
 
 def test_default_delta():
     x = DateTime()

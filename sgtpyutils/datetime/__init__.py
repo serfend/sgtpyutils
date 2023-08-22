@@ -22,6 +22,7 @@ timezone = datetime.timezone
 timedelta = datetime.timedelta
 time = datetime.time
 
+
 class DateTime(datetime.datetime):
     Format = DateFormat
 
@@ -114,6 +115,20 @@ class DateTime(datetime.datetime):
 
     def date(self) -> DateTime:
         return DateTime(super().date())
+
+    @classmethod
+    def now(cls):
+        '''
+        获取当前DateTime
+        '''
+        return super().now()
+
+    @classmethod
+    def today(cls):
+        '''
+        获取今日date
+        '''
+        return DateTime(super().today()).date()
 
     @classmethod
     def fromtimestamp(cls, t: int, tz=None):
