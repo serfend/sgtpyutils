@@ -2,17 +2,25 @@ from __future__ import annotations
 import enum
 from typing import overload
 import datetime
-import time
+from time import timezone as time_timezone
 from .dateutil.parser import parser, parserinfo
 _EPOCH = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
 
 
 class DateFormat(enum.Enum):
-    DEFAULT = '%Y-%m-%d %H:%M:%S'
-    DEFAULT_MIL = '%Y-%m-%d %H:%M:%S'
-    UTC = '%Y-%m-%dT%H:%M:%S%z'
-    UTC_MIL = '%Y-%m-%dT%H:%M:%S.%f%z'
+    YMD = f'%Y-%m-%d'
+    HMS = f'%H:%M:%S'
+    DEFAULT = f'{YMD} {HMS}'
+    DEFAULT_MIL = f'{DEFAULT}.%f'
+    T = f'{YMD}T{HMS}'
+    T_MIL = f'{T}.%f'
+    UTC = f'{T}%z'
+    UTC_MIL = f'{T_MIL}%z'
 
+
+timezone = datetime.timezone
+timedelta = datetime.timedelta
+time = datetime.time
 
 class DateTime(datetime.datetime):
     Format = DateFormat
@@ -30,10 +38,14 @@ class DateTime(datetime.datetime):
         ...
 
     @overload
-    def __new__(cls, year: int, month: int, day: int, hour: int = ..., minute: int = ..., second: int = ..., microsecond: int = ..., tzinfo: datetime._TzInfo | None = ..., *, fold: int = ...):
+    def __new__(cls, year: int, month: int, day: int, hour: int = ..., minute: int = ..., second: int = ..., microsecond: int = ..., tzinfo: datetime.timezone | None = ..., *, fold: int = ...):
         ...
 
-    def __new__(cls, year: int = ..., month: int = ..., day: int = ..., hour: int = ..., minute: int = ..., second: int = ..., microsecond: int = ..., tzinfo: datetime._TzInfo | None = ..., *, fold: int = 0):
+    def __new__(cls, year: int = ..., month: int = ..., day: int = ..., hour: int = ..., minute: int = ..., second: int = ..., microsecond: int = ..., tzinfo: datetime.timezone | None = ..., *, fold: int = 0):
+        if year is Ellipsis:
+            return DateTime.now()
+        if isinstance(year, int) and month is None:
+            return DateTime.fromtimestamp(year)
         if isinstance(year, str):
             x = DateTime.fromstring(year)
             return x
@@ -46,7 +58,7 @@ class DateTime(datetime.datetime):
             return DateTime(x.year, x.month, x.day, 0, 0, 0, 0, None, fold=0)
 
         if tzinfo is None:  # 无时区时，默认使用当前时区
-            d = datetime.timedelta(seconds=-time.timezone)
+            d = datetime.timedelta(seconds=-time_timezone)
             tzinfo = datetime.timezone(d)
 
         t = super().__new__(cls, year, month, day, hour, minute,
@@ -62,21 +74,42 @@ class DateTime(datetime.datetime):
 
         return cls(r)
 
-    def getTime(self) -> int:
+    def getDelta(self, tzinfo: datetime.timezone = None):
+        if tzinfo is None:
+            tzinfo = self.tzinfo
+        if tzinfo is None:
+            # 无时区信息则返回当前时区
+            return time_timezone
+        # 否则返回本DateTime的utc偏差
+        x = self.replace(tzinfo=tzinfo)
+        return -x.utcoffset().total_seconds()
+
+    def getTime(self, delta: int = None) -> int:
         '''
-        获取毫秒时间戳
+        获取毫秒时间戳，并将时间输出为UTC+00:00
         '''
         # 若未定义当前时区，则使用当前计算机时区
-        delta = time.timezone if self.tzinfo is None else -self.utcoffset().total_seconds()
+        if delta is None:
+            delta = self.getDelta()
 
         # 将时间转换为UTC+0
         r = self.timestamp() - delta
         r *= 1e3  # 转换为毫秒
         return int(r)
 
-    def tostring(self, format: str = DateFormat.DEFAULT) -> str:
+    def tostring(self, format: str = DateFormat.DEFAULT, tz_info: datetime.timezone = None) -> str:
+        '''
+        格式化输出字符串，默认输出UTC+00:00的数值
+        @param format:str:输出的格式
+        @param tz_info:TzInfo:时区信息
+        '''
         if isinstance(format, DateFormat):
             format = format.value
+        delta = self.getDelta(tz_info)
+        if delta != 0:
+            x = DateTime.fromtimestamp(self.getTime(delta))
+            return self.strftime(format)
+
         return self.strftime(format)
 
     def date(self) -> DateTime:
@@ -90,7 +123,7 @@ class DateTime(datetime.datetime):
             t /= 1e3
 
         # 将时间转换为UTC+0
-        delta = time.timezone if tz is None else 0
+        delta = time_timezone if tz is None else 0
         t += delta
 
         return super().fromtimestamp(t, tz)

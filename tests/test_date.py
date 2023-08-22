@@ -1,4 +1,26 @@
-from sgtpyutils.datetime import DateTime
+from sgtpyutils.datetime import *
+
+import time
+
+
+def test_default_datetime():
+    x = DateTime()
+    assert x == DateTime.now()
+    delta1 = x.getTime()
+
+    d = timedelta(seconds=100)
+    tz = timezone(d)
+
+    x.replace(tzinfo=tz)
+    delta2 = x.getTime()
+
+    assert delta1 == delta2, 'getTime应将时间统一'
+
+
+def test_default_delta():
+    x = DateTime()
+    delta = x.getDelta()
+    assert time.timezone == delta
 
 
 def test_date():
@@ -6,6 +28,9 @@ def test_date():
     date_string = '2023-01-16 16:11:17'
     x = DateTime.fromstring(date_mil_string)
     assert x.toRelativeTime() == date_string
+    assert x.tostring() == date_string
+
+    x = DateTime(date_mil_string)
     assert x.tostring() == date_string
 
     x2 = DateTime.fromstring('2023-01-06 15:16:11.355789')
@@ -34,11 +59,14 @@ def test_offset_date():
     x2 = DateTime('2023-08-19 15:00:00')
     assert (x2 - x1).total_seconds() == 0
 
+
 def test_utc_format():
     x1 = DateTime('2023-08-19T15:12:34.123+08:00')
-    assert x1.tostring(DateTime.Format.UTC_MIL) == '2023-08-19T15:12:34.123000+0800'
+    assert x1.tostring(
+        DateTime.Format.UTC_MIL) == '2023-08-19T15:12:34.123000+0800'
     assert x1.tostring(DateTime.Format.UTC) == '2023-08-19T15:12:34+0800'
 
     x1 = DateTime('2023-08-19 15:12:34.123')
-    assert x1.tostring(DateTime.Format.UTC_MIL) == '2023-08-19T15:12:34.123000+0800'
+    assert x1.tostring(
+        DateTime.Format.UTC_MIL) == '2023-08-19T15:12:34.123000+0800'
     assert x1.tostring(DateTime.Format.UTC) == '2023-08-19T15:12:34+0800'
