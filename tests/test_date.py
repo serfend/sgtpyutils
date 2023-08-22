@@ -57,18 +57,20 @@ def test_date():
 
 
 def test_offset_date():
-    x1 = DateTime('2023-08-19T15:00:00+08:00')
+    delta = timedelta(seconds=-time_timezone)
+    tz = timezone(delta)
+    x1 = DateTime(f'2023-08-19T15:00:00{tz}')
     x2 = DateTime('2023-08-19 15:00:00')
     assert (x2 - x1).total_seconds() == 0
 
 
 def test_utc_format():
-    x1 = DateTime('2023-08-19T15:12:34.123+08:00')
-    assert x1.tostring(
-        DateTime.Format.UTC_MIL) == '2023-08-19T15:12:34.123000+0800'
-    assert x1.tostring(DateTime.Format.UTC) == '2023-08-19T15:12:34+0800'
+    t_mil = DateFormat.T_MIL
+    t = DateFormat.T
+    x1 = DateTime('2023-08-19T15:12:34.123+07:00')
+    assert x1.tostring(t_mil) == '2023-08-19T15:12:34.123000'
+    assert x1.tostring(t) == '2023-08-19T15:12:34'
 
     x1 = DateTime('2023-08-19 15:12:34.123')
-    assert x1.tostring(
-        DateTime.Format.UTC_MIL) == '2023-08-19T15:12:34.123000+0800'
-    assert x1.tostring(DateTime.Format.UTC) == '2023-08-19T15:12:34+0800'
+    assert x1.tostring(t_mil) == '2023-08-19T15:12:34.123000'
+    assert x1.tostring(t) == '2023-08-19T15:12:34'

@@ -150,7 +150,7 @@ class DateTime(datetime.datetime):
         @param show_full_date_if_over:int:当相差时间（天数）过多时返回绝对时间
         '''
         if target is Ellipsis:
-            target = DateTime.now(tz=self.tzinfo)
+            target = DateTime(tzinfo=self.tzinfo)
         r = target - self
         delta_time = r.days + r.seconds / 86400
         if delta_time > show_full_date_if_over:
@@ -187,9 +187,7 @@ class DateTime(datetime.datetime):
             return super().__sub__(other)
         if not isinstance(other, datetime.datetime):
             raise Exception(f'invalid type in date:{type(other)}')
-        if not other.tzinfo is None and self.tzinfo is None:
-            other = DateTime.fromtimestamp(other.timestamp())
-            pass
+        other = DateTime.fromtimestamp(other.getTime())
 
         return super().__sub__(other)
 
