@@ -5,7 +5,7 @@ import time
 
 def test_default_datetime():
     x = DateTime()
-    assert x == DateTime.now()
+    assert x.tostring() == DateTime.now().tostring()
     delta1 = x.getTime()
 
     d = timedelta(seconds=100)
