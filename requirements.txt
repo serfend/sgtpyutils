@@ -6,4 +6,4 @@ httpx[http2]
 redis
 fake-useragent
 six
-
+pathlib2
