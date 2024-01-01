@@ -56,6 +56,21 @@ def distinct(arr: List, predict: Callable = None) -> List:
     return result
 
 
+def map(arr: List, predict: Callable) -> List:
+    result = []
+    for i in arr:
+        x = predict(i)
+        result.append(x)
+    return result
+
+
+def reduce(arr: List, predict: Callable, default_value=None) -> List:
+    '''predict[prev,cur]->next'''
+    for i in arr:
+        default_value = predict(default_value, i)
+    return default_value
+
+
 def list2dict(arr: List) -> dict:
     '''
     convert list to dictionary

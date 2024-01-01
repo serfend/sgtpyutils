@@ -23,6 +23,7 @@ def test_fields():
     assert 'B1' in fields
     assert fields['A1'] == 0
 
+
 def test_flat():
     flat = sgtpyutils.extensions.flat
     items = ['1', '2', '3', '4', '5']
@@ -95,19 +96,43 @@ def test_hash():
     get_hash('123456', HashAlgo.md5) == 'e10adc3949ba59abbe56e057f20f883e'
     get_hash('123456', HashAlgo.sha1) == '7c4a8d09ca3762af61e59520943dc26494f8941b'
 
+
 def test_dict2obj():
     class X:
         def __init__(self) -> None:
             self.a = 0
-    x = {'a':1}
+    x = {'a': 1}
 
     dict2obj = sgtpyutils.extensions.clazz.dict2obj
-    x:X = dict2obj(X(),x)
+    x: X = dict2obj(X(), x)
     assert x.a == 1
+
+
 def test_list2dict():
-    a = [2,4,7]
+    a = [2, 4, 7]
     list2dict = sgtpyutils.extensions.list2dict
     x = list2dict(a)
     assert x.get(0) == 2
     assert x.get(1) == 4
     assert x.get(2) == 7
+
+
+def test_reduce():
+    x = [1, 5, 7]
+    func = sgtpyutils.extensions.reduce
+    assert func(x, lambda prev, cur: prev+cur, 0) == 13
+    assert func(x, lambda prev, cur: max(prev, cur), 0) == 7
+    assert func(x, lambda prev, cur: prev*cur, 2) == 70
+
+    x = [{'a': 1}, {'b': 3}, None, {'a': 5}]
+
+    def handler(prev, cur):
+        if not cur:
+            return prev
+        for key in cur:
+            prev[key] = cur[key]
+        return prev
+
+    result = func(x, handler, {})
+    assert result['a'] == 5
+    assert result['b'] == 3
