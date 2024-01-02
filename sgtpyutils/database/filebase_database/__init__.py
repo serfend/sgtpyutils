@@ -28,7 +28,7 @@ class Database:
         if not xxx.parent.is_dir():
             os.makedirs(xxx.parent.as_posix())
         if not xxx.exists():
-            with open(xxx.as_posix(),'w') as f:
+            with open(xxx.as_posix(), 'w') as f:
                 pass
 
     def load_db(self, reload: bool = False):
@@ -65,7 +65,8 @@ class Database:
             @wraps(target_mathod)
             def wrapper(*args, **kwargs):
                 db = Database(db_path)
-                assign_by_type(args, kwargs, target_mathod, Database, db)
-                return target_mathod(*args, **kwargs)
+                arg = AssignableArg(args, kwargs, target_mathod)
+                arg.assign_by_type(Database, db)
+                return target_mathod(*arg.args, **arg.kwargs)
             return wrapper
         return func

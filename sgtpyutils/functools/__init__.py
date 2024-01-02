@@ -111,6 +111,8 @@ class AssignableArg:
         return self._assign_if_empty(key, value, method, False)
 
     def _assign_if_empty(self, key: str, value: any, method: function = None, check_arg_index: bool = False):
+        method = self.method if method is None else method
+        
         _value, _arg_index = self.check_if_exist(key, method)
         if check_arg_index and _arg_index == -1:
             return True
