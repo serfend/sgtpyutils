@@ -59,6 +59,7 @@ class AssignableArg:
         return self.args
 
     def assign_default_value(self, key: str, method: function = None):
+        '''get argument default-value'''
         method = self.method if method is None else method
         params = inspect.signature(method).parameters
         p_dict = dict([[x, params[x]] for x in params])
@@ -91,30 +92,32 @@ class AssignableArg:
         检查函数入参是否包含变量且非默认值，如不包含则赋值到kwargs
         @return bool:是否赋值
         '''
-        _value, _arg_index = self.check_if_exist(key, method)
-        return self.__assign_by_result(key, value,  _value, _arg_index, method)
+        # 已有默认值 或 已传入值 则不赋值
+        return self._assign_if_empty(key, value, method, True)
+
+    @staticmethod
+    def is_empty(value):
+        if value is None:
+            return True
+        if not issubclass(type(value), type):
+            return False
+        return issubclass(value, inspect._empty)
 
     def assign_if_not_exist(self, key: str, value: any, method: function = None) -> bool:
         '''
         检查函数入参是否包含变量，如不包含则赋值到kwargs
         @return bool:是否赋值
         '''
+        return self._assign_if_empty(key, value, method, False)
+
+    def _assign_if_empty(self, key: str, value: any, method: function = None, check_arg_index: bool = False):
         _value, _arg_index = self.check_if_exist(key, method)
-        while not _value is None:
-            if issubclass(type(_value), type):
-                if issubclass(_value, inspect._empty):
-                    break  # empty类型可继续赋值
-            return True  # 已有值 不再赋值
-        return self.__assign_by_result(key, value,  _value, _arg_index, method)
-
-    def __assign_by_result(self, key: str, value: any, _arg_value, _arg_index: int, method: function = None) -> bool:
-        method = self.method if method is None else method
-
-        if _arg_index == -1:
-            return False  # 函数中无此变量声明 不赋值
-        if _arg_value is None:  # 如果存在值但为None，则仅修改args
-            self.set_args(_arg_index, value, method)
+        if check_arg_index and _arg_index == -1:
             return True
+        if not AssignableArg.is_empty(_value):  # empty类型可继续赋值
+            return True  # 已有值 不再赋值
+        if _arg_index > -1:
+            return self.set_args(_arg_index, value, method)
         self.kwargs[key] = value
         return True
 
