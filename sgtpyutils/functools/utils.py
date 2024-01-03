@@ -59,7 +59,9 @@ def generic_check_issubclass(
       则会检查其 `__bound__` 或 `__constraints__`
       是否是 class_or_tuple 中一个类型的子类或 None。
     """
-    if cls.__class__ != type:
+    if cls == class_or_tuple:
+        return True # 两者都是type
+    if cls.__class__ != type: # 前者是type
         return type(cls) == type(class_or_tuple)
     try:
         return issubclass(cls, class_or_tuple)
