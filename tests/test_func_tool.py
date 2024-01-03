@@ -1,3 +1,4 @@
+from typing import Dict, Any, AnyStr
 from sgtpyutils.functools import AssignableArg
 
 
@@ -46,3 +47,36 @@ def test_auto_assign_by_name():
     assert assigned == 1
     assert not_assigned == 12
     assert kwargs.get('kw_arg') == 13
+
+
+class ATypeClass:
+    def __init__(self, a) -> None:
+        self.a = a
+
+
+AType = ATypeClass
+
+xDict = Dict[Any, Any]
+xStr = str
+
+
+def require_by_name(method):
+    def wrapper(*args, **kwargs):
+        arg = AssignableArg(args, kwargs, method)
+        current_value = arg.get_assign_by_type(xDict)
+        assert current_value['v'] == 3
+
+        current_value = arg.get_assign_by_type(xStr)
+        assert current_value == '2'
+
+        return method(*arg.args, **arg.kwargs)
+    return wrapper
+
+
+@require_by_name
+def func_to_assign(a: AType, b: xStr, c: xDict, d: Dict):
+    return a
+
+
+def test_get_assign():
+    func_to_assign(AType(1), '2', {'v': 3}, {'v': 4})

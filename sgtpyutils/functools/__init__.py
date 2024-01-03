@@ -99,9 +99,9 @@ class AssignableArg:
     def is_empty(value):
         if value is None:
             return True
-        if not issubclass(type(value), type):
+        if not generic_check_issubclass(type(value), type):
             return False
-        return issubclass(value, inspect._empty)
+        return generic_check_issubclass(value, inspect._empty)
 
     def assign_if_not_exist(self, key: str, value: any, method: function = None) -> bool:
         '''
@@ -128,7 +128,7 @@ class AssignableArg:
 
         uargs = method.__annotations__
         for x in uargs:
-            if not issubclass(uargs[x], target_type):
+            if not generic_check_issubclass(uargs[x], target_type):
                 continue  # not taraget type
             self.assign_if_not_exist(x, value)
         return self
@@ -138,7 +138,7 @@ class AssignableArg:
 
         uargs = method.__annotations__
         for index, x in enumerate(uargs):
-            if not issubclass(uargs[x], target_type):
+            if not generic_check_issubclass(uargs[x], target_type):
                 continue  # not taraget type
             over = len(self.args) > index
             user = self.args[index] if over else self.kwargs.get(x)
@@ -147,6 +147,7 @@ class AssignableArg:
                 return user
         return None
 
+from .utils import *
 
 def check_if_exist(key: str, args: AssignableArg) -> tuple[any, int]:
     return args.check_if_exist(key)
