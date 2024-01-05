@@ -24,7 +24,7 @@ from typing import (
     overload,
 )
 
-from pydantic.typing import is_union, is_none_type, is_literal_type, all_literal_values
+from pydantic.typing import is_none_type, is_literal_type, all_literal_values
 
 from nonebot.log import logger
 
@@ -67,13 +67,7 @@ def generic_check_issubclass(
         return issubclass(cls, class_or_tuple)
     except TypeError:
         origin = get_origin(cls)
-        if is_union(origin):
-            return all(
-                is_none_type(type_) or generic_check_issubclass(
-                    type_, class_or_tuple)
-                for type_ in get_args(cls)
-            )
-        elif is_literal_type(cls):
+        if is_literal_type(cls):
             return all(
                 is_none_type(value) or isinstance(value, class_or_tuple)
                 for value in all_literal_values(cls)
