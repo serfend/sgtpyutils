@@ -24,8 +24,6 @@ from typing import (
     overload,
 )
 
-from pydantic.typing import is_none_type, is_literal_type, all_literal_values
-
 from nonebot.log import logger
 
 P = ParamSpec("P")
@@ -60,20 +58,14 @@ def generic_check_issubclass(
       是否是 class_or_tuple 中一个类型的子类或 None。
     """
     if cls == class_or_tuple:
-        return True # 两者都是type
-    if cls.__class__ != type: # 前者是type
+        return True  # 两者都是type
+    if cls.__class__ != type:  # 前者是type
         return type(cls) == type(class_or_tuple)
     try:
         return issubclass(cls, class_or_tuple)
     except TypeError:
         origin = get_origin(cls)
-        if is_literal_type(cls):
-            return all(
-                is_none_type(value) or isinstance(value, class_or_tuple)
-                for value in all_literal_values(cls)
-            )
-        # ensure generic List, Dict can be checked
-        elif origin:
+        if origin:
             # avoid class check error (typing.Final, typing.ClassVar, etc...)
             try:
                 return issubclass(origin, class_or_tuple)
@@ -81,11 +73,7 @@ def generic_check_issubclass(
                 return False
         elif isinstance(cls, TypeVar):
             if cls.__constraints__:
-                return all(
-                    is_none_type(type_)
-                    or generic_check_issubclass(type_, class_or_tuple)
-                    for type_ in cls.__constraints__
-                )
+                return all(generic_check_issubclass(type_, class_or_tuple) for type_ in cls.__constraints__)
             elif cls.__bound__:
                 return generic_check_issubclass(cls.__bound__, class_or_tuple)
         return False
