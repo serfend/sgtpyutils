@@ -24,7 +24,6 @@ from typing import (
     overload,
 )
 
-from nonebot.log import logger
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -218,37 +217,3 @@ class classproperty(Generic[T]):
 
     def __get__(self, instance: Any, owner: Optional[Type[Any]] = None) -> T:
         return self.func(type(instance) if owner is None else owner)
-
-
-class DataclassEncoder(json.JSONEncoder):
-    """可以序列化 {ref}`nonebot.adapters.Message`(List[Dataclass]) 的 `JSONEncoder`"""
-
-    @override
-    def default(self, o):
-        if dataclasses.is_dataclass(o):
-            return {f.name: getattr(o, f.name) for f in dataclasses.fields(o)}
-        return super().default(o)
-
-
-def logger_wrapper(logger_name: str):
-    """用于打印 adapter 的日志。
-
-    参数:
-        logger_name: adapter 的名称
-
-    返回:
-        日志记录函数
-
-        日志记录函数的参数:
-
-        - level: 日志等级
-        - message: 日志信息
-        - exception: 异常信息
-    """
-
-    def log(level: str, message: str, exception: Optional[Exception] = None):
-        logger.opt(colors=True, exception=exception).log(
-            level, f"<m>{escape_tag(logger_name)}</m> | {message}"
-        )
-
-    return log
