@@ -11,8 +11,7 @@ class DateEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, DateTime):
             return obj.tostring()
-        else:
-            return json.JSONEncoder.default(self, obj)
+        return json.JSONEncoder.default(self, obj)
 
 
 class Database:
@@ -46,7 +45,7 @@ class Database:
             if Database.cache.get(self.database) is not None:
                 self.raw_value = Database.cache.get(self.database)
                 return self.raw_value
-        
+
         self.check_file()
         with open(self.database_filename, 'r', encoding='utf-8') as f:
             data = f.read()
@@ -68,7 +67,7 @@ class Database:
         Database.ensure_file(path)
 
         with open(path, 'w', encoding='utf-8') as f:
-            data_raw = json.dumps(data, cls=DateEncoder)
+            data_raw = json.dumps(data, cls=DateEncoder, ensure_ascii=False)
             f.write(data_raw)
 
     @property
