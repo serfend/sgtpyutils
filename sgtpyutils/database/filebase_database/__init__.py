@@ -1,10 +1,10 @@
 import pathlib2
 from functools import wraps
 import os
-from hikapi.common_utils.functools import assign_by_type
-from hikapi.api.libs import *
 import json
 import atexit
+from sgtpyutils.datetime import DateTime
+from sgtpyutils.functools import *
 
 
 class DateEncoder(json.JSONEncoder):
@@ -68,12 +68,13 @@ class Database:
 
     @staticmethod
     def require_database(db_path: str):
-        def func(target_mathod: function):
+        def func(target_mathod: callable):
             @wraps(target_mathod)
             def wrapper(*args, **kwargs):
                 db = Database(db_path)
-                assign_by_type(args, kwargs, target_mathod, Database, db)
-                return target_mathod(*args, **kwargs)
+                arg = AssignableArg(args, kwargs, target_mathod)
+                arg.assign_by_type(Database, db)
+                return target_mathod(*arg.args, **arg.kwargs)
             return wrapper
         return func
 

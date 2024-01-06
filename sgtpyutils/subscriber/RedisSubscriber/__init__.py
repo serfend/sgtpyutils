@@ -2,9 +2,9 @@ from __future__ import annotations
 import json
 import redis
 from functools import wraps
-from hikapi.common_utils.functools import *
 import threading
 from sgtpyutils.logger import logger
+from sgtpyutils.functools import AssignableArg
 import time
 
 
