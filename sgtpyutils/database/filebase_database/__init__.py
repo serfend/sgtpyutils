@@ -5,6 +5,7 @@ import json
 import atexit
 from sgtpyutils.datetime import DateTime
 from sgtpyutils.functools import AssignableArg
+from ..BaseSaver import *
 
 
 class DateEncoder(json.JSONEncoder):
@@ -14,17 +15,20 @@ class DateEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-class Database:
-    cache: dict[str, dict] = {}
+class Database(ISaver):
+    cache: dict[str, list[dict]] = {} # 通过list[T]存储实现传地址
+    # TODO 使用真实的传址
     root_path: str = None
     raw_value: dict
     '''数据原始对象'''
     database: str
     '''数据库名称'''
 
-    def __init__(self, database: str) -> None:
+    def __init__(self, database: str, serializer: callable = None, deserializer: callable = None) -> None:
         atexit.register(self.save)
         self.database = database
+        self.serializer = serializer
+        self.deserializer = deserializer
 
         self.load_db()
 
@@ -41,26 +45,32 @@ class Database:
                 pass
 
     def load_db(self, reload: bool = False):
+        self.raw_value = None
         if not reload:
             if Database.cache.get(self.database) is not None:
-                self.raw_value = Database.cache.get(self.database)
-                return self.raw_value
+                self.raw_value = Database.cache.get(self.database)  # list[T]
+                return self.value
 
         self.check_file()
         with open(self.database_filename, 'r', encoding='utf-8') as f:
             data = f.read()
             if len(data) < 3:
                 data = '{}'
-            self.raw_value = json.loads(data)
+            self.raw_value = [json.loads(data)]
+            if self.deserializer:
+                self.raw_value = [self.deserializer(self.raw_value[0])]
         Database.cache[self.database] = self.raw_value
-        return self.raw_value
+        return self.value
 
     def save(self):
         if hasattr(self, 'is_deleted'):
             return False
         if Database.cache.get(self.database) is None:
             return  # 已被删除
-        return Database.save_direct(self.database_filename, self.raw_value)
+        data = self.value
+        if self.serializer:
+            data = self.serializer(data)
+        return Database.save_direct(self.database_filename, data)
 
     @staticmethod
     def save_direct(path: str, data: dict):
@@ -105,7 +115,14 @@ class Database:
 
     @property
     def value(self) -> dict:
-        return Database.cache[self.database]
+        raw_value = Database.cache.get(self.database)
+        return raw_value[0]
+
+    @value.setter
+    def value(self, value: any) -> dict:
+        if not Database.cache.get(self.database):
+            Database.cache[self.database] = []
+        Database.cache[self.database][0] = value
 
     def get(self, key: str, default: any = None) -> dict:
         if key not in self.value:
@@ -127,7 +144,7 @@ class Database:
     @staticmethod
     def save_all():
         for x in Database.cache:
-            data = Database.cache[x]
+            data = Database.cache[x][0]
             path = Database._database_filename(x)
             Database.save_direct(path, data)
 
