@@ -88,7 +88,9 @@ class Database(ISaver):
 
     @staticmethod
     def save_direct(path: str, data: dict):
-        assert data is None or isinstance(data, dict)
+        if data is not None:
+            x = isinstance(data, dict) or isinstance(data, list)
+            assert x, f'无效的类型:{type(data)}{data}'
         Database.ensure_file(path)
 
         with open(path, 'w', encoding='utf-8') as f:
