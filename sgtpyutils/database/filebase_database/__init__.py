@@ -15,8 +15,26 @@ class DateEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
+class DatabaseData:
+    def __init__(self, data: dict, serializer: callable, deserializer: callable) -> None:
+        self.data = data
+        self.serializer = serializer
+        self.deserializer = deserializer
+
+    def to_dict(self):
+        if self.serializer:
+            return self.serializer(self.data)
+        return self.data
+
+    def from_dict(self, data: dict):
+        if self.deserializer:
+            self.data = self.deserializer(data)
+            return
+        self.data = data
+
+
 class Database(ISaver):
-    cache: dict[str, list[dict]] = {} # 通过list[T]存储实现传地址
+    cache: dict[str, DatabaseData] = {}  # 通过DatabaseData[T]存储实现传地址
     # TODO 使用真实的传址
     root_path: str = None
     raw_value: dict
@@ -27,8 +45,7 @@ class Database(ISaver):
     def __init__(self, database: str, serializer: callable = None, deserializer: callable = None) -> None:
         atexit.register(self.save)
         self.database = database
-        self.serializer = serializer
-        self.deserializer = deserializer
+        self.data_obj = DatabaseData(None, serializer, deserializer)
 
         self.load_db()
 
@@ -45,10 +62,10 @@ class Database(ISaver):
                 pass
 
     def load_db(self, reload: bool = False):
-        self.raw_value = None
         if not reload:
             if Database.cache.get(self.database) is not None:
-                self.raw_value = Database.cache.get(self.database)  # list[T]
+                # 覆盖为缓存
+                self.data_obj = Database.cache.get(self.database)
                 return self.value
 
         self.check_file()
@@ -56,10 +73,9 @@ class Database(ISaver):
             data = f.read()
             if len(data) < 3:
                 data = '{}'
-            self.raw_value = [json.loads(data)]
-            if self.deserializer:
-                self.raw_value = [self.deserializer(self.raw_value[0])]
-        Database.cache[self.database] = self.raw_value
+            self.data_obj.from_dict(json.loads(data))
+
+        Database.cache[self.database] = self.data_obj
         return self.value
 
     def save(self):
@@ -67,13 +83,12 @@ class Database(ISaver):
             return False
         if Database.cache.get(self.database) is None:
             return  # 已被删除
-        data = self.value
-        if self.serializer:
-            data = self.serializer(data)
+        data = self.data_obj.to_dict()
         return Database.save_direct(self.database_filename, data)
 
     @staticmethod
     def save_direct(path: str, data: dict):
+        assert data is None or isinstance(data, dict)
         Database.ensure_file(path)
 
         with open(path, 'w', encoding='utf-8') as f:
@@ -115,16 +130,15 @@ class Database(ISaver):
 
     @property
     def value(self) -> dict:
-        raw_value = Database.cache.get(self.database)
-        return raw_value[0]
+        return Database.cache.get(self.database).data
 
     @value.setter
     def value(self, value: any) -> dict:
         if not Database.cache.get(self.database):
-            Database.cache[self.database] = []
-        Database.cache[self.database][0] = value
+            Database.cache[self.database] = self.data_obj
+        Database.cache[self.database].data = value
 
-    def get(self, key: str, default: any = None) -> dict:
+    def get(self, key: str, default: any = None):
         if key not in self.value:
             self.value[key] = default
         return self.value.get(key)
@@ -144,9 +158,9 @@ class Database(ISaver):
     @staticmethod
     def save_all():
         for x in Database.cache:
-            data = Database.cache[x][0]
+            data_obj = Database.cache[x]
             path = Database._database_filename(x)
-            Database.save_direct(path, data)
+            Database.save_direct(path, data_obj.to_dict())
 
     def delete(self):
         self.is_deleted = True

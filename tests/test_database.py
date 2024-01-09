@@ -113,4 +113,5 @@ def test_serializer():
     data: TestSerializer = db.value
     assert data.name == 'xx2'
 
+    filebase_database.Database.save_all()
     db.delete()
