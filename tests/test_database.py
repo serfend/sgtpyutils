@@ -115,3 +115,28 @@ def test_serializer():
 
     filebase_database.Database.save_all()
     db.delete()
+import pathlib2
+def test_global_independent():
+    path = pathlib2.Path(__file__).parent
+    db_name = f'{path}test_global_independent'
+    db = filebase_database.Database(db_name)
+    db1 = filebase_database.Database(db_name)
+    assert id(db.data_obj) == id(db1.data_obj)
+    db1.value['test'] = '1'
+    
+    db_name2 = 'test_global_independent2'
+    db2 = filebase_database.Database(db_name2)
+    assert id(db.data_obj) != id(db2.data_obj)
+
+    db2.value['test'] = '2'
+    db2.value['test2'] = '2.1'
+
+    assert db1.value.get('test') == '1'
+    assert db2.value.get('test') == '2'
+    assert db1.value.get('test2') is None
+    assert db2.value.get('test2') == '2.1'
+
+    db1.delete()
+    db2.delete()
+
+

@@ -5,6 +5,7 @@ import json
 import atexit
 from sgtpyutils.datetime import DateTime
 from sgtpyutils.functools import AssignableArg
+from sgtpyutils.logger import logger
 from ..BaseSaver import *
 
 
@@ -56,9 +57,13 @@ class Database(ISaver):
     def ensure_file(path: str):
         xxx = pathlib2.Path(path)
         if not xxx.parent.is_dir():
-            os.makedirs(xxx.parent.as_posix())
+            t_path = xxx.parent.as_posix()
+            logger.warning(f'target-db-path not exist,create:{t_path}')
+            os.makedirs(t_path)
         if not xxx.exists():
-            with open(xxx.as_posix(), 'w'):
+            t_file = xxx.as_posix()
+            logger.warning(f'target-db-file not exist,create:{t_file}')
+            with open(t_file, 'w'):
                 pass
 
     def load_db(self, reload: bool = False):
@@ -68,6 +73,9 @@ class Database(ISaver):
                 self.data_obj = Database.cache.get(self.database)
                 return self.value
 
+        pre ='new database cache is loaded:'
+        suf = f',id:{hex(id(self.data_obj))}'
+        logger.debug(f'{pre}{self.database_filename}{suf}')
         self.check_file()
         with open(self.database_filename, 'r', encoding='utf-8') as f:
             data = f.read()
