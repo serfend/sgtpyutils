@@ -24,12 +24,19 @@ class DatabaseData:
 
     def to_dict(self):
         if self.serializer:
-            return self.serializer(self.data)
+            try:
+                result = self.serializer(self.data)
+                return result
+            except Exception as ex:
+                logger.error(f'fail to serializer {self.data} ,ex:{ex}')
         return self.data
 
     def from_dict(self, data: dict):
         if self.deserializer:
-            self.data = self.deserializer(data)
+            try:
+                self.data = self.deserializer(data)
+            except Exception as ex:
+                logger.error(f'fail to deserializer {data} ,ex:{ex}')
             return
         self.data = data
 
@@ -73,7 +80,7 @@ class Database(ISaver):
                 self.data_obj = Database.cache.get(self.database)
                 return self.value
 
-        pre ='new database cache is loaded:'
+        pre = 'new database cache is loaded:'
         suf = f',id:{hex(id(self.data_obj))}'
         logger.debug(f'{pre}{self.database_filename}{suf}')
         self.check_file()
