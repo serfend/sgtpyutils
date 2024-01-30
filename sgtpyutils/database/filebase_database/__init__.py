@@ -50,7 +50,8 @@ class Database(ISaver):
     database: str
     '''数据库名称'''
 
-    def __init__(self, database: str, serializer: callable = None, deserializer: callable = None) -> None:
+    def __init__(self, database: str, serializer: callable = None, deserializer: callable = None, log: bool = True) -> None:
+        self.log = log
         atexit.register(self.save)
         self.database = database
         self.data_obj = DatabaseData(None, serializer, deserializer)
@@ -61,15 +62,17 @@ class Database(ISaver):
         return Database.ensure_file(self.database_filename)
 
     @staticmethod
-    def ensure_file(path: str):
+    def ensure_file(path: str, log: bool = True):
         xxx = pathlib2.Path(path)
         if not xxx.parent.is_dir():
             t_path = xxx.parent.as_posix()
-            logger.warning(f'target-db-path not exist,create:{t_path}')
+            if log:
+                logger.warning(f'target-db-path not exist,create:{t_path}')
             os.makedirs(t_path)
         if not xxx.exists():
             t_file = xxx.as_posix()
-            logger.warning(f'target-db-file not exist,create:{t_file}')
+            if log:
+                logger.warning(f'target-db-file not exist,create:{t_file}')
             with open(t_file, 'w'):
                 pass
 
@@ -82,7 +85,8 @@ class Database(ISaver):
 
         pre = 'new database cache is loaded:'
         suf = f',id:{hex(id(self.data_obj))}'
-        logger.debug(f'{pre}{self.database_filename}{suf}')
+        if self.log:
+            logger.debug(f'{pre}{self.database_filename}{suf}')
         self.check_file()
         with open(self.database_filename, 'r', encoding='utf-8') as f:
             data = f.read()
