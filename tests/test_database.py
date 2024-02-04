@@ -1,3 +1,4 @@
+import pathlib2
 from sgtpyutils.database import filebase_database
 
 import os
@@ -106,7 +107,6 @@ def test_serializer():
     data.name = 'xx2'
     db.save()
 
-
     filebase_database.Database.cache = {}
 
     db = filebase_database.Database(db_name, serialer, deserialer)
@@ -115,7 +115,8 @@ def test_serializer():
 
     filebase_database.Database.save_all()
     db.delete()
-import pathlib2
+
+
 def test_global_independent():
     path = pathlib2.Path(__file__).parent
     db_name = f'{path}test_global_independent'
@@ -123,7 +124,7 @@ def test_global_independent():
     db1 = filebase_database.Database(db_name)
     assert id(db.data_obj) == id(db1.data_obj)
     db1.value['test'] = '1'
-    
+
     db_name2 = 'test_global_independent2'
     db2 = filebase_database.Database(db_name2)
     assert id(db.data_obj) != id(db2.data_obj)
@@ -138,5 +139,3 @@ def test_global_independent():
 
     db1.delete()
     db2.delete()
-
-

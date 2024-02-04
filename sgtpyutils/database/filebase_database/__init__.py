@@ -52,7 +52,7 @@ class Database(ISaver):
 
     def __init__(self, database: str, serializer: callable = None, deserializer: callable = None, log: bool = True) -> None:
         self.log = log
-        atexit.register(self.save)
+
         self.database = database
         self.data_obj = DatabaseData(None, serializer, deserializer)
 
@@ -197,3 +197,4 @@ class Database(ISaver):
 __x = pathlib2.Path(__file__)
 __x = __x.parent.parent.parent.joinpath('database')
 Database.root_path = __x
+atexit.register(Database.save_all)
