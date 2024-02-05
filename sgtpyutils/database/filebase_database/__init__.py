@@ -1,3 +1,4 @@
+import threading
 import pathlib2
 from functools import wraps
 import os
@@ -41,7 +42,10 @@ class DatabaseData:
         self.data = data
 
 
+DBS_DEBUG = True
+
 class Database(ISaver):
+    lock = threading.Lock()
     cache: dict[str, DatabaseData] = {}  # 通过DatabaseData[T]存储实现传地址
     # TODO 使用真实的传址
     root_path: str = None
@@ -77,25 +81,27 @@ class Database(ISaver):
                 pass
 
     def load_db(self, reload: bool = False):
-        if not reload:
-            if Database.cache.get(self.database) is not None:
-                # 覆盖为缓存
-                self.data_obj = Database.cache.get(self.database)
-                return self.value
+        with Database.lock:
+            if not reload:
+                if prev := Database.cache.get(self.database):
+                    # 覆盖为缓存
+                    self.data_obj = prev
+                    return self.value
 
-        pre = 'new database cache is loaded:'
-        suf = f',id:{hex(id(self.data_obj))}'
-        if self.log:
-            logger.debug(f'{pre}{self.database_filename}{suf}')
-        self.check_file()
-        with open(self.database_filename, 'r', encoding='utf-8') as f:
-            data = f.read()
-            if len(data) < 3:
-                data = '{}'
-            self.data_obj.from_dict(json.loads(data))
+            pre = 'new database cache is loaded:'
+            suf = f',id:{hex(id(self.data_obj))}'
+            if self.log:
+                debug_func = logger.debug if reload else logger.warning
+                debug_func(f'{pre}{self.database_filename}{suf}')
+            self.check_file()
+            with open(self.database_filename, 'r', encoding='utf-8') as f:
+                data = f.read()
+                if len(data) < 3:
+                    data = '{}'
+                self.data_obj.from_dict(json.loads(data))
 
-        Database.cache[self.database] = self.data_obj
-        return self.value
+            Database.cache[self.database] = self.data_obj
+            return self.value
 
     def save(self):
         if hasattr(self, 'is_deleted'):
@@ -110,10 +116,13 @@ class Database(ISaver):
         if data is not None:
             x = isinstance(data, dict) or isinstance(data, list)
             assert x, f'无效的类型:{type(data)}{data}'
+
         Database.ensure_file(path)
 
         with open(path, 'w', encoding='utf-8') as f:
             data_raw = json.dumps(data, cls=DateEncoder, ensure_ascii=False)
+            if DBS_DEBUG:
+                print(path, len(data_raw))
             f.write(data_raw)
 
     @property
@@ -184,6 +193,7 @@ class Database(ISaver):
             Database.save_direct(path, data_obj.to_dict())
 
     def delete(self):
+        logger.warning(f'attempt to delete db:{self.database}')
         self.is_deleted = True
         if Database.cache.get(self.database) is not None:
             del Database.cache[self.database]
