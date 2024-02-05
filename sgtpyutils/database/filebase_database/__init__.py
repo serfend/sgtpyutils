@@ -1,3 +1,4 @@
+import traceback
 import threading
 import pathlib2
 from functools import wraps
@@ -43,6 +44,7 @@ class DatabaseData:
 
 
 DBS_DEBUG = True
+
 
 class Database(ISaver):
     lock = threading.Lock()
@@ -122,7 +124,7 @@ class Database(ISaver):
         with open(path, 'w', encoding='utf-8') as f:
             data_raw = json.dumps(data, cls=DateEncoder, ensure_ascii=False)
             if DBS_DEBUG:
-                print(path, len(data_raw))
+                print('save_direct', path, len(data_raw))
             f.write(data_raw)
 
     @property
@@ -187,6 +189,8 @@ class Database(ISaver):
 
     @staticmethod
     def save_all():
+        stacks = str.join('\n', [str(x) for x in traceback.extract_stack()])
+        print(f'attempt to save all from {stacks}')
         for x in Database.cache:
             data_obj = Database.cache[x]
             path = Database._database_filename(x)
