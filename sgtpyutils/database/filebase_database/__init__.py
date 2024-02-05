@@ -207,4 +207,7 @@ class Database(ISaver):
 __x = pathlib2.Path(__file__)
 __x = __x.parent.parent.parent.joinpath('database')
 Database.root_path = __x
-atexit.register(Database.save_all)
+# should let user manually run instead of auto
+# because here shall cause data-lost
+# why? seeems register let static-class to be a new instances.
+# atexit.register(Database.save_all)
