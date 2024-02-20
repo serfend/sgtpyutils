@@ -4,11 +4,10 @@ import pathlib2
 from functools import wraps
 import os
 import json
-import atexit
 from sgtpyutils.datetime import DateTime
 from sgtpyutils.functools import AssignableArg
 from sgtpyutils.logger import logger
-from ..BaseSaver import *
+from ..BaseSaver import ISaver
 
 
 class DateEncoder(json.JSONEncoder):
@@ -19,7 +18,7 @@ class DateEncoder(json.JSONEncoder):
 
 
 class DatabaseData:
-    def __init__(self, data: dict, serializer: callable, deserializer: callable) -> None:
+    def __init__(self, data: dict, serializer: callable, deserializer: callable):
         self.data = data
         self.serializer = serializer
         self.deserializer = deserializer
@@ -56,7 +55,10 @@ class Database(ISaver):
     database: str
     '''数据库名称'''
 
-    def __init__(self, database: str, serializer: callable = None, deserializer: callable = None, log: bool = True) -> None:
+    def __init__(
+            self,     database: str,
+            serializer: callable = None, deserializer: callable = None,
+            log: bool = True) -> None:
         self.log = log
 
         self.database = database
@@ -120,12 +122,23 @@ class Database(ISaver):
             assert x, f'无效的类型:{type(data)}{data}'
 
         Database.ensure_file(path)
-
+        Database.ensure_key_is_str(path, data)
         with open(path, 'w', encoding='utf-8') as f:
+            # print(f'{path}:type{type(data)},keys:{len(data)},')
             data_raw = json.dumps(data, cls=DateEncoder, ensure_ascii=False)
             if DBS_DEBUG:
                 print('save_direct', path, len(data_raw))
             f.write(data_raw)
+
+    @staticmethod
+    def ensure_key_is_str(name: str, data: dict):
+        if isinstance(data, dict):
+            for x in data:
+                if isinstance(x, str):
+                    continue
+                logger.warning(f'{name},key [{x}] invalid type:{type(x)}')
+                # 此处不要尝试修复，因为可能会有重复key导致数据丢失
+                
 
     @property
     def database_filename(self) -> str:
