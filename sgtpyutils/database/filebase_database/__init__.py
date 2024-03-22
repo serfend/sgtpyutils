@@ -117,18 +117,22 @@ class Database(ISaver):
 
     @staticmethod
     def save_direct(path: str, data: dict):
-        if data is not None:
-            x = isinstance(data, dict) or isinstance(data, list)
-            assert x, f'无效的类型:{type(data)}{data}'
+        try:
+            if data is not None:
+                x = isinstance(data, dict) or isinstance(data, list)
+                assert x, f'无效的类型:{type(data)}{data}'
 
-        Database.ensure_file(path)
-        Database.ensure_key_is_str(path, data)
-        with open(path, 'w', encoding='utf-8') as f:
-            # print(f'{path}:type{type(data)},keys:{len(data)},')
-            data_raw = json.dumps(data, cls=DateEncoder, ensure_ascii=False)
-            if DBS_DEBUG:
-                print('save_direct', path, len(data_raw))
-            f.write(data_raw)
+            Database.ensure_file(path)
+            Database.ensure_key_is_str(path, data)
+            with open(path, 'w', encoding='utf-8') as f:
+                # print(f'{path}:type{type(data)},keys:{len(data)},')
+                data_raw = json.dumps(
+                    data, cls=DateEncoder, ensure_ascii=False)
+                if DBS_DEBUG:
+                    print('save_direct', path, len(data_raw))
+                f.write(data_raw)
+        except Exception as ex:
+            logger.error(f'file-db:fail on save_direct {path}： {ex}')
 
     @staticmethod
     def ensure_key_is_str(name: str, data: dict):
@@ -138,7 +142,6 @@ class Database(ISaver):
                     continue
                 logger.warning(f'{name},key [{x}] invalid type:{type(x)}')
                 # 此处不要尝试修复，因为可能会有重复key导致数据丢失
-                
 
     @property
     def database_filename(self) -> str:
