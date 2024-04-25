@@ -18,10 +18,11 @@ class DateEncoder(json.JSONEncoder):
 
 
 class DatabaseData:
-    def __init__(self, data: dict, serializer: callable, deserializer: callable):
+    def __init__(self, data: dict, serializer: callable, deserializer: callable, name: str = None):
         self.data = data
         self.serializer = serializer
         self.deserializer = deserializer
+        self.name = name
 
     def to_dict(self):
         if self.serializer:
@@ -29,7 +30,9 @@ class DatabaseData:
                 result = self.serializer(self.data)
                 return result
             except Exception as ex:
-                logger.error(f'fail to serializer {self.data} ,ex:{ex}')
+                logger.error(
+                    f'[{self.name}]fail to serializer {self.data} ,ex:{ex}')
+                self.data = {}
         return self.data
 
     def from_dict(self, data: dict):
@@ -37,7 +40,9 @@ class DatabaseData:
             try:
                 self.data = self.deserializer(data)
             except Exception as ex:
-                logger.error(f'fail to deserializer {data} ,ex:{ex}')
+                logger.error(
+                    f'[{self.name}]fail to deserializer {data} ,ex:{ex}')
+                self.data = {}
             return
         self.data = data
 
@@ -62,7 +67,8 @@ class Database(ISaver):
         self.log = log
 
         self.database = database
-        self.data_obj = DatabaseData(None, serializer, deserializer)
+        self.data_obj = DatabaseData(
+            None, serializer, deserializer, name=database)
 
         self.load_db()
 
