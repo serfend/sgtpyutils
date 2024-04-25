@@ -33,7 +33,7 @@ class DatabaseData:
                 logger.error(
                     f'[{self.name}]fail to serializer {self.data} ,ex:{ex}')
                 self.data = {}
-        return self.data
+        return self.data or {}
 
     def from_dict(self, data: dict):
         if self.deserializer:
@@ -44,7 +44,7 @@ class DatabaseData:
                     f'[{self.name}]fail to deserializer {data} ,ex:{ex}')
                 self.data = {}
             return
-        self.data = data
+        self.data = data or {}
 
 
 DBS_DEBUG = True
