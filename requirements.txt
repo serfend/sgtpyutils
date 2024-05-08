@@ -1,4 +1,4 @@
-scidatetime >= 1.19.18
+scidatetime >= 1.20.1
 pycryptodome
 colorlog
 openpyxl >= 3.1.0
