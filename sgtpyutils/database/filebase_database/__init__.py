@@ -47,7 +47,7 @@ class DatabaseData:
         self.data = data or {}
 
 
-DBS_DEBUG = True
+DBS_DEBUG = False
 
 
 class Database(ISaver):
@@ -73,7 +73,7 @@ class Database(ISaver):
         self.load_db()
 
     def check_file(self):
-        return Database.ensure_file(self.database_filename)
+        return Database.ensure_file(self.database_filename, log=self.log)
 
     @staticmethod
     def ensure_file(path: str, log: bool = True):
@@ -98,9 +98,9 @@ class Database(ISaver):
                     self.data_obj = prev
                     return self.value
 
-            pre = 'new database cache is loaded:'
-            suf = f',id:{hex(id(self.data_obj))}'
             if self.log:
+                pre = 'new database cache is loaded:'
+                suf = f',id:{hex(id(self.data_obj))}'
                 debug_func = logger.debug if reload else logger.warning
                 debug_func(f'{pre}{self.database_filename}{suf}')
             self.check_file()
@@ -139,6 +139,8 @@ class Database(ISaver):
                 f.write(data_raw)
         except Exception as ex:
             logger.error(f'file-db:fail on save_direct {path}： {ex}')
+            return False
+        return True
 
     @staticmethod
     def ensure_key_is_str(name: str, data: dict):
@@ -213,10 +215,15 @@ class Database(ISaver):
     def save_all():
         stacks = str.join('\n', [str(x) for x in traceback.extract_stack()])
         print(f'attempt to save all from {stacks}')
+        count_all = len(Database.cache)
+        count_succ = 0
         for x in Database.cache:
             data_obj = Database.cache[x]
             path = Database._database_filename(x)
-            Database.save_direct(path, data_obj.to_dict())
+            r = Database.save_direct(path, data_obj.to_dict())
+            if r:
+                count_succ += 1
+        print(f'completed save all:{count_succ}/{count_all}')
 
     def delete(self):
         logger.warning(f'attempt to delete db:{self.database}')
