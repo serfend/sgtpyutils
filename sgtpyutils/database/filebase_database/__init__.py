@@ -30,8 +30,8 @@ class DatabaseData:
                 result = self.serializer(self.data)
                 return result
             except Exception as ex:
-                logger.error(
-                    f'[{self.name}]fail to serializer {self.data} ,ex:{ex}')
+                tip = f'[{self.name}]fail to serializer {self.data}'
+                logger.error(f'{tip},ex:{ex}\n{traceback.format_exc()}')
                 self.data = {}
         return self.data or {}
 
@@ -40,8 +40,8 @@ class DatabaseData:
             try:
                 self.data = self.deserializer(data)
             except Exception as ex:
-                logger.error(
-                    f'[{self.name}]fail to deserializer {data} ,ex:{ex}')
+                tip = f'[{self.name}]fail to deserializer {self.data}'
+                logger.error(f'{tip},ex:{ex}\n{traceback.format_exc()}')
                 self.data = {}
             return
         self.data = data or {}
@@ -138,7 +138,8 @@ class Database(ISaver):
                     print('save_direct', path, len(data_raw))
                 f.write(data_raw)
         except Exception as ex:
-            logger.error(f'file-db:fail on save_direct {path}： {ex}')
+            tip = f'file-db:fail on save_direct {path}：'
+            logger.error(f'{tip},ex:{ex}\n{traceback.format_exc()}')
             return False
         return True
 
