@@ -218,7 +218,7 @@ class Database(ISaver):
         print(f'attempt to save all from {stacks}')
         count_all = len(Database.cache)
         count_succ = 0
-        for x in Database.cache:
+        for x in list(Database.cache):
             data_obj = Database.cache[x]
             path = Database._database_filename(x)
             r = Database.save_direct(path, data_obj.to_dict())

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .utils import *
 import inspect
 
 
@@ -76,7 +77,7 @@ class AssignableArg:
         if r:
             return (r, -1)
         arg_index = self.get_method_dict(method).get(key)
-        if not arg_index is None:
+        if arg_index is not None:
 
             # 判断当前变量已被包含，否则使用其默认值
             if len(self.args) > arg_index:
@@ -112,7 +113,7 @@ class AssignableArg:
 
     def _assign_if_empty(self, key: str, value: any, method: function = None, check_arg_index: bool = False):
         method = self.method if method is None else method
-        
+
         _value, _arg_index = self.check_if_exist(key, method)
         if check_arg_index and _arg_index == -1:
             return True
@@ -147,7 +148,6 @@ class AssignableArg:
                 return user
         return None
 
-from .utils import *
 
 def check_if_exist(key: str, args: AssignableArg) -> tuple[any, int]:
     return args.check_if_exist(key)
