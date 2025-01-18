@@ -35,7 +35,7 @@ async def send_with_async(method: str, url: str, proxy: dict = None, **kwargs) -
     max_try_time = 3
     while True:
         try:
-            async with httpx.AsyncClient(proxies=proxy, follow_redirects=True, verify=False) as client:
+            async with httpx.AsyncClient(proxy=proxy, follow_redirects=True, verify=False) as client:
                 req = await client.request(method, url, **kwargs)
                 return req
         except TimeoutError:
