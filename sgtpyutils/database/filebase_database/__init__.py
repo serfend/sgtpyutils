@@ -32,7 +32,6 @@ class DatabaseData:
             except Exception as ex:
                 tip = f'[{self.name}]fail to serializer {self.data}'
                 logger.error(f'{tip},ex:{ex}\n{traceback.format_exc()}')
-                self.data = {}
         return self.data or {}
 
     def from_dict(self, data: dict):
@@ -42,7 +41,7 @@ class DatabaseData:
             except Exception as ex:
                 tip = f'[{self.name}]fail to deserializer {self.data}'
                 logger.error(f'{tip},ex:{ex}\n{traceback.format_exc()}')
-                self.data = {}
+                # self.data = {} # 此处不应该清空数据
             return
         self.data = data or {}
 
