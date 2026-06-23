@@ -1,0 +1,154 @@
+"""基础 CRUD 测试（同步路径）。"""
+
+import os
+import pathlib2
+import tempfile
+import json as json_mod
+
+from sgtpyutils.database import filebase_database
+
+
+# ---------------------------------------------------------------------------
+# 基础读写
+# ---------------------------------------------------------------------------
+
+def test_db():
+    db = filebase_database.Database('test')
+    assert os.path.exists(db.database_filename)
+
+    db.value['test'] = 'test'
+    assert db.value['test'] == 'test'
+
+    db.save()
+
+    db = filebase_database.Database('test')
+    assert db.value['test'] == 'test'
+
+    db.delete()
+
+
+def test_aop():
+    @filebase_database.Database.require_database('test_aop')
+    def test(database: filebase_database.Database):
+        assert database
+        assert database.database_filename
+        database.delete()
+    test()
+
+
+def test_multi_edit():
+    db_name = 'test_multi_edit'
+    db = filebase_database.Database(db_name)
+    db.value['common'] = 1
+
+    db2 = filebase_database.Database(db_name)
+    db2.value['common'] += 1
+
+    db3 = filebase_database.Database(db_name)
+    db3.value['common2'] = '123'
+
+    db_check = filebase_database.Database(db_name)
+    assert db_check.value['common'] == 2
+    assert db_check.value['common2'] == '123'
+
+    db_check.delete()
+
+
+def test_global_independent():
+    path = pathlib2.Path(__file__).parent.parent
+    db_name = f'{path}test_global_independent'
+    db = filebase_database.Database(db_name)
+    db1 = filebase_database.Database(db_name)
+    assert id(db.data_obj) == id(db1.data_obj)
+    db1.value['test'] = '1'
+
+    db_name2 = 'test_global_independent2'
+    db2 = filebase_database.Database(db_name2)
+    assert id(db.data_obj) != id(db2.data_obj)
+
+    db2.value['test'] = '2'
+    db2.value['test2'] = '2.1'
+
+    assert db1.value.get('test') == '1'
+    assert db2.value.get('test') == '2'
+    assert db1.value.get('test2') is None
+    assert db2.value.get('test2') == '2.1'
+
+    db1.delete()
+    db2.delete()
+
+
+# ---------------------------------------------------------------------------
+# save_all
+# ---------------------------------------------------------------------------
+
+def test_save_all():
+    for i in range(10):
+        db_name = f'test_save_all_{i}'
+        db = filebase_database.Database(db_name)
+        db.value['x'] = i
+
+    filebase_database.Database.save_all()
+
+    for i in range(10):
+        db_name = f'test_save_all_{i}'
+        db = filebase_database.Database(db_name)
+        assert db.value['x'] == i
+    for i in range(10):
+        db_name = f'test_save_all_{i}'
+        db = filebase_database.Database(db_name)
+        db.delete()
+        assert not os.path.exists(db.database_filename)
+
+
+# ---------------------------------------------------------------------------
+# serializer
+# ---------------------------------------------------------------------------
+
+def test_serializer():
+    class TestSerializer:
+        def __init__(self, data: dict = None) -> None:
+            if data is None:
+                return
+            self.load_data(data)
+
+        def to_dict(self) -> dict:
+            return {'name': self.name}
+
+        @classmethod
+        def from_dict(cls, data: dict):
+            target = TestSerializer()
+            return target.load_data(data)
+
+        def load_data(self, data: dict):
+            if data is None:
+                data = {}
+            self.name = data.get('name')
+            return self
+
+    db_name = 'test_serializer'
+    serializer = TestSerializer.to_dict
+    def deserializer(x): return TestSerializer.from_dict(x)
+    db = filebase_database.Database(db_name, serializer, deserializer)
+
+    obj = TestSerializer({'name': 'xxx'})
+    db.value = obj
+    db.save()
+
+    filebase_database.Database.cache = {}
+
+    db = filebase_database.Database(db_name, serializer, deserializer)
+    data: TestSerializer = db.value
+    assert data.name == 'xxx'
+
+    data.name = 'xx2'
+    db.save()
+
+    filebase_database.Database.cache = {}
+
+    db = filebase_database.Database(db_name, serializer, deserializer)
+    data: TestSerializer = db.value
+    assert data.name == 'xx2'
+
+    filebase_database.Database.save_all()
+    db.delete()
