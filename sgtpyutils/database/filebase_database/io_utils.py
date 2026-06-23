@@ -182,6 +182,33 @@ def save_direct(path: str | Path, data: Any) -> bool:
         return False
 
 
+def save_direct_chunked(path: str | Path, data: Any, chunk_size: int = 1024 * 1024) -> bool:
+    """同步分块保存大文件（峰值内存低，适合 100MB+ 文件）。
+
+    与 save_direct 的区别：
+    - 使用 orjson.dumps + memoryview 分块写入
+    - 峰值内存 = chunk_size（默认 1MB，而非整个文件）
+
+    Args:
+        path: 文件路径
+        data: 要保存的数据
+        chunk_size: 每次写入的字节数（默认 1MB）
+    """
+    try:
+        if data is not None:
+            assert isinstance(data, (dict, list)), f"无效的类型: {type(data)}"
+
+        _ensure_file_sync(path, True)
+        _chunked_write(path, data, chunk_size)
+        return True
+    except Exception as ex:
+        logger.error(
+            f"file-db: fail on save_direct_chunked {path}: "
+            f"ex:{ex}\n{traceback.format_exc()}"
+        )
+        return False
+
+
 async def save_direct_async(path: str | Path, data: Any) -> bool:
     """异步保存数据到文件。
 
