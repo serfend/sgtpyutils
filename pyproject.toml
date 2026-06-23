@@ -21,3 +21,8 @@ exclude = ["tests", "*.tests", "*.tests.*", "tests.*"]
 
 [tool.setuptools.package-data]
 "*" = ["LICENSE", "NOTICE"]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
