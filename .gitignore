@@ -151,3 +151,10 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 /.workbuddy
+
+# 日志轮转文件
+*.log.*
+
+# 测试产物
+test_*.json
+*_test.json
