@@ -17,7 +17,7 @@ from .io_utils import (
     _ensure_file_async,
     save_direct,
     save_direct_async,
-    save_direct_async_streaming,
+    save_direct_async_chunked,
     ensure_file,
     ensure_file_async,
     load_direct_async,
@@ -167,24 +167,24 @@ class Database(ISaver):
         data = self._data_obj.to_dict()
         return await save_direct_async(self.database_filename, data)
 
-    async def save_async_streaming(self, chunk_size: int = 64 * 1024) -> bool:
-        """异步保存（流式写入，峰值内存低，适合 100MB+ 文件）。
+    async def save_async_chunked(self, chunk_size: int = 1024 * 1024) -> bool:
+        """异步保存（分块写入，峰值内存低，适合 100MB+ 文件）。
 
         与 save_async 的区别：
-        - 使用 json.JSONEncoder().iterencode() 流式序列化
-        - 配合文件流式写入，峰值内存 ~chunk_size（默认 64KB）
-        - 速度比 orjson 慢，但内存占用极低
+        - 使用 orjson.dumps + memoryview 分块写入
+        - 峰值内存 = chunk_size（默认 1MB，而非整个文件）
+        - 事件循环零阻塞（orjson 释放 GIL）
         - 适合已知的大文件（如 1GB+ 的单个 database）
 
         Args:
-            chunk_size: 每次写入的字符数上限（默认 64KB）
+            chunk_size: 每次写入的字节数（默认 1MB，建议 64KB~4MB）
         """
         if self._is_deleted:
             return False
         if self._database not in Database.cache:
             return False
         data = self._data_obj.to_dict()
-        return await save_direct_async_streaming(self.database_filename, data, chunk_size)
+        return await save_direct_async_chunked(self.database_filename, data, chunk_size)
 
     # ------------------------------------------------------------------
     # 批量保存
