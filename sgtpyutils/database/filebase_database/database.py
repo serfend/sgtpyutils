@@ -17,8 +17,10 @@ from .io_utils import (
     _ensure_file_async,
     save_direct,
     save_direct_async,
+    save_direct_async as _save_direct_async,  # noqa: F401
     ensure_file,
     ensure_file_async,
+    load_direct_async,
     _ensure_key_is_str,
 )
 from .models import DatabaseData, DateEncoder
@@ -139,13 +141,11 @@ class Database(ISaver):
                 )
 
             await _ensure_file_async(self.database_filename, log=self._log)
+            raw: str = await load_direct_async(self.database_filename)
 
-            loop = asyncio.get_event_loop()
-            raw: str = await loop.run_in_executor(
-                None, lambda: Path(self.database_filename).read_text(encoding='utf-8')
-            )
             if len(raw) < 3:
                 raw = '{}'
+            loop = asyncio.get_event_loop()
             data = await loop.run_in_executor(None, json.loads, raw)
             self._data_obj.from_dict(data)
             Database.cache[self._database] = self._data_obj

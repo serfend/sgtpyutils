@@ -1,6 +1,9 @@
 """底层 I/O 工具函数（同步/异步）。
 
 供 Database 类内部调用，也可通过 Database.save_direct / Database.ensure_file 公开访问。
+
+异步 I/O 统一使用 run_in_executor（线程池），保证事件循环不被阻塞。
+不依赖 aiofiles，避免软依赖带来的不确定性。
 """
 
 import asyncio
@@ -70,7 +73,11 @@ def save_direct(path: str | Path, data: Any) -> bool:
 
 
 async def save_direct_async(path: str | Path, data: Any) -> bool:
-    """异步保存数据到文件。"""
+    """异步保存数据到文件。
+
+    所有 I/O 和 CPU 密集操作（json.dumps）均在线程池中执行，
+    保证事件循环不被阻塞。
+    """
     try:
         if data is not None:
             assert isinstance(data, (dict, list)), f'无效的类型: {type(data)}'
@@ -91,6 +98,17 @@ async def save_direct_async(path: str | Path, data: Any) -> bool:
             f'ex:{ex}\n{traceback.format_exc()}'
         )
         return False
+
+
+async def load_direct_async(path: str | Path) -> str:
+    """异步读取文件内容。
+
+    文件读取在线程池中执行，保证事件循环不被阻塞。
+    """
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None, lambda: Path(path).read_text(encoding='utf-8')
+    )
 
 
 # ------------------------------------------------------------------
