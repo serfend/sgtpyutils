@@ -17,7 +17,7 @@ from .io_utils import (
     _ensure_file_async,
     save_direct,
     save_direct_async,
-    save_direct_async as _save_direct_async,  # noqa: F401
+    save_direct_async_streaming,
     ensure_file,
     ensure_file_async,
     load_direct_async,
@@ -141,12 +141,8 @@ class Database(ISaver):
                 )
 
             await _ensure_file_async(self.database_filename, log=self._log)
-            raw: str = await load_direct_async(self.database_filename)
+            data = await load_direct_async(self.database_filename)
 
-            if len(raw) < 3:
-                raw = '{}'
-            loop = asyncio.get_event_loop()
-            data = await loop.run_in_executor(None, json.loads, raw)
             self._data_obj.from_dict(data)
             Database.cache[self._database] = self._data_obj
             return self.value
@@ -170,6 +166,25 @@ class Database(ISaver):
             return False
         data = self._data_obj.to_dict()
         return await save_direct_async(self.database_filename, data)
+
+    async def save_async_streaming(self, chunk_size: int = 64 * 1024) -> bool:
+        """异步保存（流式写入，峰值内存低，适合 100MB+ 文件）。
+
+        与 save_async 的区别：
+        - 使用 json.JSONEncoder().iterencode() 流式序列化
+        - 配合文件流式写入，峰值内存 ~chunk_size（默认 64KB）
+        - 速度比 orjson 慢，但内存占用极低
+        - 适合已知的大文件（如 1GB+ 的单个 database）
+
+        Args:
+            chunk_size: 每次写入的字符数上限（默认 64KB）
+        """
+        if self._is_deleted:
+            return False
+        if self._database not in Database.cache:
+            return False
+        data = self._data_obj.to_dict()
+        return await save_direct_async_streaming(self.database_filename, data, chunk_size)
 
     # ------------------------------------------------------------------
     # 批量保存

@@ -8,7 +8,7 @@
 from pathlib import Path
 
 from .database import Database
-from .io_utils import save_direct, save_direct_async, ensure_file, ensure_file_async
+from .io_utils import save_direct, save_direct_async, save_direct_async_streaming, ensure_file, ensure_file_async
 from .models import DatabaseData, DateEncoder
 
 __all__ = [
@@ -17,6 +17,7 @@ __all__ = [
     'DateEncoder',
     'save_direct',
     'save_direct_async',
+    'save_direct_async_streaming',
     'ensure_file',
     'ensure_file_async',
 ]
