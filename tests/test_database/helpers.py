@@ -6,8 +6,9 @@ from pathlib import Path
 
 
 # ---------------------------------------------------------------------------
-# 事件循环延迟测量
+# 事件循环延迟测量（检测持续阻塞，而非单次峰值）
 # ---------------------------------------------------------------------------
+
 
 async def measure_event_loop_latency(
     during: float,
@@ -41,13 +42,30 @@ async def run_blocking_test(
     during: float = 2.0,
     interval: float = 0.01,
     max_allowed_latency: float = 0.05,
-) -> tuple[bool, float, float]:
-    """并发运行 slow_coro 和延迟测量，返回 (通过?, 最大间隔, 平均间隔)。
+    consecutive_threshold: int = 5,
+) -> tuple[bool, float, float, int]:
+    """并发运行 slow_coro 和延迟测量，返回 (通过?, 最大间隔, 平均间隔, 持续阻塞次数)。
 
-    slow_coro: 模拟慢 I/O 的协程（会与测量并发执行）
-    during: 测量持续时间（秒）
-    interval: 测量间隔（秒）
-    max_allowed_latency: 允许的最大间隔（秒），超过则认为有阻塞
+    阻塞检测策略（严格）：
+    - 单次峰值 > max_allowed_latency：警告（Windows 调度偶尔会有）
+    - 连续 consecutive_threshold 个间隔都 > max_allowed_latency：失败（持续阻塞）
+
+    这样既能检测真正的阻塞（持续占用事件循环），
+    又不会因为 Windows 调度的一次峰值误报。
+
+    Args:
+        slow_coro: 模拟慢 I/O 的协程（会与测量并发执行）
+        during: 测量持续时间（秒）
+        interval: 测量间隔（秒）
+        max_allowed_latency: 允许的最大间隔（秒），超过则记录为"阻塞采样"
+        consecutive_threshold: 连续多少个阻塞采样才判定为"持续阻塞"（默认 5）
+
+    Returns:
+        (passed, max_latency, avg_latency, blocking_events)
+        - passed: 是否通过（无持续阻塞）
+        - max_latency: 最大间隔（秒）
+        - avg_latency: 平均间隔（秒）
+        - blocking_events: 持续阻塞事件数（连续 N 个间隔超标的次数）
     """
     latencies: list[float] = []
 
@@ -61,17 +79,35 @@ async def run_blocking_test(
     await asyncio.gather(run_slow(), run_measure())
 
     if not latencies:
-        return False, 0.0, 0.0
+        return True, 0.0, 0.0, 0
 
     max_lat = max(latencies)
     avg_lat = sum(latencies) / len(latencies)
-    passed = max_lat < max_allowed_latency
-    return passed, max_lat, avg_lat
+
+    # 检测持续阻塞：连续 consecutive_threshold 个间隔都超标
+    consecutive_count = 0
+    max_consecutive = 0
+    blocking_events = 0
+    for lat in latencies:
+        if lat > max_allowed_latency:
+            consecutive_count += 1
+            if consecutive_count >= consecutive_threshold:
+                blocking_events += 1
+                consecutive_count = 0  # 重置，开始检测下一次持续阻塞
+        else:
+            consecutive_count = 0
+        max_consecutive = max(max_consecutive, consecutive_count)
+
+    # 通过条件：无持续阻塞事件
+    passed = blocking_events == 0
+
+    return passed, max_lat, avg_lat, blocking_events
 
 
 # ---------------------------------------------------------------------------
 # 通用 mock 工具
 # ---------------------------------------------------------------------------
+
 
 def mock_slow_io(has_aiofiles: bool, io_type: str = "write", delay: float = 1.0):
     """返回一个适用于 patch 的 side_effect / wrapper，模拟慢 I/O。

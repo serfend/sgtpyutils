@@ -197,16 +197,16 @@ def test_ensure_file_async():
 
 
 # ---------------------------------------------------------------------------
-# save_async_streaming
+# save_async_chunked
 # ---------------------------------------------------------------------------
 
-def test_save_async_streaming():
-    """测试 save_async_streaming 方法（流式写入，峰值内存低）"""
-    db_name = 'test_streaming'
+def test_save_async_chunked():
+    """测试 save_async_chunked 方法（分块写入，峰值内存低）"""
+    db_name = 'test_chunked'
     db = filebase_database.Database(db_name)
     db.value = {'key': 'value', 'num': 42, 'list': [1, 2, 3]}
 
-    asyncio.run(db.save_async_streaming())
+    asyncio.run(db.save_async_chunked())
     assert os.path.exists(db.database_filename)
 
     # 验证文件内容正确
@@ -219,29 +219,29 @@ def test_save_async_streaming():
     db2.delete()
 
 
-def test_save_async_streaming_when_deleted():
-    """测试 save_async_streaming 当 _is_deleted=True 时返回 False"""
-    db = filebase_database.Database('test_streaming_deleted')
+def test_save_async_chunked_when_deleted():
+    """测试 save_async_chunked 当 _is_deleted=True 时返回 False"""
+    db = filebase_database.Database('test_chunked_deleted')
     db.delete()
-    result = asyncio.run(db.save_async_streaming())
+    result = asyncio.run(db.save_async_chunked())
     assert result is False
 
 
-def test_save_direct_async_streaming():
-    """测试 save_direct_async_streaming 静态方法"""
+def test_save_direct_async_chunked():
+    """测试 save_direct_async_chunked 静态方法"""
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
         tmp_path = f.name
         json_mod.dump({'test': 'initial'}, f)
 
     try:
         result = asyncio.run(
-            filebase_database.save_direct_async_streaming(tmp_path, {'test': 'streaming_value'})
+            filebase_database.save_direct_async_chunked(tmp_path, {'test': 'chunked_value'})
         )
         assert result is True
 
         with open(tmp_path, 'r', encoding='utf-8') as f:
             data = json_mod.load(f)
-            assert data['test'] == 'streaming_value'
+            assert data['test'] == 'chunked_value'
     finally:
         try:
             os.unlink(tmp_path)
