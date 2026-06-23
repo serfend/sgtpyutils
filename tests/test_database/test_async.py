@@ -188,6 +188,62 @@ def test_ensure_file_async():
     asyncio.run(filebase_database.Database.ensure_file_async(tmp_path))
     assert os.path.exists(tmp_path)
 
-    os.unlink(tmp_path)
-    os.rmdir(os.path.join(tmp_dir, 'subdir'))
-    os.rmdir(tmp_dir)
+    # 清理
+    try:
+        os.rmdir(os.path.join(tmp_dir, 'subdir'))
+        os.rmdir(tmp_dir)
+    except OSError:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# save_async_streaming
+# ---------------------------------------------------------------------------
+
+def test_save_async_streaming():
+    """测试 save_async_streaming 方法（流式写入，峰值内存低）"""
+    db_name = 'test_streaming'
+    db = filebase_database.Database(db_name)
+    db.value = {'key': 'value', 'num': 42, 'list': [1, 2, 3]}
+
+    asyncio.run(db.save_async_streaming())
+    assert os.path.exists(db.database_filename)
+
+    # 验证文件内容正确
+    db2 = filebase_database.Database(db_name)
+    asyncio.run(db2.load_db_async())
+    assert db2.value['key'] == 'value'
+    assert db2.value['num'] == 42
+    assert db2.value['list'] == [1, 2, 3]
+
+    db2.delete()
+
+
+def test_save_async_streaming_when_deleted():
+    """测试 save_async_streaming 当 _is_deleted=True 时返回 False"""
+    db = filebase_database.Database('test_streaming_deleted')
+    db.delete()
+    result = asyncio.run(db.save_async_streaming())
+    assert result is False
+
+
+def test_save_direct_async_streaming():
+    """测试 save_direct_async_streaming 静态方法"""
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+        tmp_path = f.name
+        json_mod.dump({'test': 'initial'}, f)
+
+    try:
+        result = asyncio.run(
+            filebase_database.save_direct_async_streaming(tmp_path, {'test': 'streaming_value'})
+        )
+        assert result is True
+
+        with open(tmp_path, 'r', encoding='utf-8') as f:
+            data = json_mod.load(f)
+            assert data['test'] == 'streaming_value'
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except FileNotFoundError:
+            pass  # 文件可能已被删除

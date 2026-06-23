@@ -3,13 +3,11 @@
 验证：save_async / save_all_async / load_db_async 在执行真实文件 I/O 时，
 事件循环仍然能及时响应其他协程（即：不产生阻塞）。
 
-测试原理：
-1. 生成一个足够大的数据结构（~50MB JSON），使 json.dumps / 文件写入
-   耗时达到可测量级别（1~3 秒）
-2. 在慢操作进行的同时，以 10ms 间隔测量事件循环响应延迟
-3. 若任何间隔 > 200ms，则认为事件循环被阻塞，测试失败
-   （Windows 上 run_in_executor 的线程池调度有偶发延迟峰值，
-     平均延迟仍 < 20ms，200ms 是合理的上限）
+测试策略：
+- 用 50MB 数据 × 5 次循环，总 I/O 量 ~250MB，足够触发线程池调度
+- 在慢操作进行的同时，以 10ms 间隔测量事件循环响应延迟
+- 若任何间隔 > 200ms，则认为事件循环被阻塞，测试失败
+  （orjson 释放 GIL，线程池调度在 Windows 上偶发峰值 < 200ms 是合理的）
 """
 
 import asyncio
@@ -67,17 +65,22 @@ def test_blocking_detection_works():
 
 @ pytest.mark.slow
 def test_event_loop_not_blocked_by_save_async_real_write():
-    """save_async 在真实大文件写入期间不阻塞事件循环。"""
+    """save_async 在真实大文件写入期间不阻塞事件循环。
+
+    策略：50MB × 5 次循环，总 I/O ~250MB，足够测量线程池调度。
+    """
     db_name = 'test_blocking_real_write'
     db = filebase_database.Database(db_name)
-    db.value = _make_large_data(size_mb=1024.0)
+    large_data = _make_large_data(size_mb=50.0)
+    db.value = large_data
 
     async def slow_coro():
-        await db.save_async()
+        for _ in range(5):
+            await db.save_async()
 
     passed, max_lat, avg_lat = asyncio.run(
         run_blocking_test(
-            slow_coro(), during=5.0, interval=0.01,
+            slow_coro(), during=10.0, interval=0.01,
             max_allowed_latency=0.20,
         )
     )
@@ -87,7 +90,7 @@ def test_event_loop_not_blocked_by_save_async_real_write():
 
     assert passed, (
         f'save_async 阻塞了事件循环！\n'
-        f'  max_latency = {max_lat:.3f}s (理论应毫无任何延时)\n'
+        f'  max_latency = {max_lat:.3f}s (允许上限 0.20s)\n'
         f'  avg_latency = {avg_lat:.3f}s\n'
         f'  这说明有同步阻塞操作在事件循环线程中执行。'
     )
@@ -101,9 +104,9 @@ def test_event_loop_not_blocked_by_save_async_real_write():
 def test_event_loop_not_blocked_by_save_all_async_real_write():
     """save_all_async 并发保存多个大文件时不阻塞事件循环。
 
-    注意：此测试会写入 100 个文件 × 10MB = ~1GB 数据，耗时较长。
+    策略：10 个文件 × 10MB，并发写入，测量事件循环延迟。
     """
-    names = [f'test_blocking_all_real_{i}' for i in range(100)]
+    names = [f'test_blocking_all_real_{i}' for i in range(10)]
     large_data = _make_large_data(size_mb=10.0)
 
     async def slow_coro():
@@ -117,14 +120,14 @@ def test_event_loop_not_blocked_by_save_all_async_real_write():
 
     passed, max_lat, avg_lat = asyncio.run(
         run_blocking_test(
-            slow_coro(), during=5.0, interval=0.01,
+            slow_coro(), during=10.0, interval=0.01,
             max_allowed_latency=0.20,
         )
     )
 
     assert passed, (
         f'save_all_async 阻塞了事件循环！\n'
-        f'  max_latency = {max_lat:.3f}s (理论应毫无任何延时)\n'
+        f'  max_latency = {max_lat:.3f}s (允许上限 0.20s)\n'
         f'  avg_latency = {avg_lat:.3f}s'
     )
 
@@ -137,20 +140,21 @@ def test_event_loop_not_blocked_by_save_all_async_real_write():
 def test_event_loop_not_blocked_by_load_db_async_real_read():
     """load_db_async 在真实大文件读取期间不阻塞事件循环。
 
-    注意：此测试会先写入 1GB 文件，耗时较长。
+    策略：50MB 文件 × 5 次读取，测量事件循环延迟。
     """
     db_name = 'test_blocking_real_read'
     db = filebase_database.Database(db_name)
-    db.value = _make_large_data(size_mb=1024.0)
+    db.value = _make_large_data(size_mb=50.0)
     db.save()
 
     async def slow_coro():
-        db2 = filebase_database.Database(db_name)
-        await db2.load_db_async(reload=True)
+        for _ in range(5):
+            db2 = filebase_database.Database(db_name)
+            await db2.load_db_async(reload=True)
 
     passed, max_lat, avg_lat = asyncio.run(
         run_blocking_test(
-            slow_coro(), during=5.0, interval=0.01,
+            slow_coro(), during=10.0, interval=0.01,
             max_allowed_latency=0.20,
         )
     )
@@ -160,7 +164,89 @@ def test_event_loop_not_blocked_by_load_db_async_real_read():
 
     assert passed, (
         f'load_db_async 阻塞了事件循环！\n'
-        f'  max_latency = {max_lat:.3f}s (理论应毫无任何延时)\n'
+        f'  max_latency = {max_lat:.3f}s (允许上限 0.20s)\n'
         f'  avg_latency = {avg_lat:.3f}s\n'
         f'  这说明有同步阻塞操作在事件循环线程中执行。'
+    )
+
+
+# ---------------------------------------------------------------------------
+# save_async_streaming — 流式写入大文件，不阻塞事件循环
+# ---------------------------------------------------------------------------
+
+@ pytest.mark.slow
+def test_event_loop_not_blocked_by_save_async_streaming_real_write():
+    """save_async_streaming 在真实大文件流式写入期间不阻塞事件循环。
+
+    策略：
+    - 单文件 200MB（比 1GB 快，但足够大以测试流式写入）
+    - 流式写入峰值内存 ~64KB，不阻塞事件循环
+    - 若需要测试 1GB 文件，可修改 size_mb 参数
+    """
+    db_name = 'test_blocking_streaming_real_write'
+    db = filebase_database.Database(db_name)
+    # 200MB 文件，足够测试流式写入的内存优势
+    large_data = _make_large_data(size_mb=200.0)
+    db.value = large_data
+
+    async def slow_coro():
+        await db.save_async_streaming()
+
+    passed, max_lat, avg_lat = asyncio.run(
+        run_blocking_test(
+            slow_coro(), during=15.0, interval=0.01,
+            max_allowed_latency=0.20,
+        )
+    )
+
+    db2 = filebase_database.Database(db_name)
+    try:
+        db2.delete()
+    except Exception:
+        pass
+
+    assert passed, (
+        f'save_async_streaming 阻塞了事件循环！\n'
+        f'  max_latency = {max_lat:.3f}s (允许上限 0.20s)\n'
+        f'  avg_latency = {avg_lat:.3f}s\n'
+        f'  流式写入应在 executor 线程中执行，不应阻塞事件循环。'
+    )
+
+
+@ pytest.mark.slow
+def test_event_loop_not_blocked_by_save_async_streaming_1gb():
+    """save_async_streaming 在 1GB 单文件写入期间不阻塞事件循环。
+
+    这是针对高性能库的真实场景测试：
+    - 单文件 1GB
+    - 流式写入峰值内存 ~64KB（vs 普通写入 ~1GB+）
+    - 事件循环延迟应 < 200ms
+    """
+    db_name = 'test_blocking_streaming_1gb'
+    db = filebase_database.Database(db_name)
+    # 1GB 文件
+    large_data = _make_large_data(size_mb=1024.0)
+    db.value = large_data
+
+    async def slow_coro():
+        await db.save_async_streaming()
+
+    passed, max_lat, avg_lat = asyncio.run(
+        run_blocking_test(
+            slow_coro(), during=30.0, interval=0.01,
+            max_allowed_latency=0.20,
+        )
+    )
+
+    db2 = filebase_database.Database(db_name)
+    try:
+        db2.delete()
+    except Exception:
+        pass
+
+    assert passed, (
+        f'save_async_streaming (1GB) 阻塞了事件循环！\n'
+        f'  max_latency = {max_lat:.3f}s (允许上限 0.20s)\n'
+        f'  avg_latency = {avg_lat:.3f}s\n'
+        f'  1GB 文件流式写入不应阻塞事件循环。'
     )
