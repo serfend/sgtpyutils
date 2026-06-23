@@ -152,3 +152,30 @@ def test_serializer():
 
     filebase_database.Database.save_all()
     db.delete()
+
+
+# ---------------------------------------------------------------------------
+# save_all_chunked
+# ---------------------------------------------------------------------------
+
+def test_save_all_chunked():
+    """测试 save_all_chunked 分块保存多个数据库"""
+    names = [f'test_save_all_chunked_{i}' for i in range(5)]
+    for name in names:
+        db = filebase_database.Database(name)
+        db.value['x'] = name
+
+    count_succ, count_all = filebase_database.Database.save_all_chunked()
+    assert count_succ == count_all == 5
+
+    for name in names:
+        db = filebase_database.Database(name)
+        assert db.value['x'] == name
+        db.delete()
+
+
+def test_save_all_chunked_empty_cache():
+    """缓存为空时 save_all_chunked 返回 (0, 0)"""
+    filebase_database.Database.cache.clear()
+    result = filebase_database.Database.save_all_chunked()
+    assert result == (0, 0)

@@ -247,3 +247,30 @@ def test_save_direct_async_chunked():
             os.unlink(tmp_path)
         except FileNotFoundError:
             pass  # 文件可能已被删除
+
+
+# ---------------------------------------------------------------------------
+# save_all_async_chunked
+# ---------------------------------------------------------------------------
+
+def test_save_all_async_chunked():
+    """测试 save_all_async_chunked 并发分块保存多个数据库"""
+    names = [f'test_save_all_async_chunked_{i}' for i in range(5)]
+    for name in names:
+        db = filebase_database.Database(name)
+        db.value['x'] = name
+
+    count_succ, count_all = asyncio.run(filebase_database.Database.save_all_async_chunked())
+    assert count_succ == count_all == 5
+
+    for name in names:
+        db = filebase_database.Database(name)
+        assert db.value['x'] == name
+        db.delete()
+
+
+def test_save_all_async_chunked_empty_cache():
+    """缓存为空时 save_all_async_chunked 返回 (0, 0)"""
+    filebase_database.Database.cache.clear()
+    result = asyncio.run(filebase_database.Database.save_all_async_chunked())
+    assert result == (0, 0)
