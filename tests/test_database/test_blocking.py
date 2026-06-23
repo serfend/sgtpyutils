@@ -16,6 +16,8 @@ import asyncio
 import os
 from pathlib import Path
 
+import pytest
+
 from sgtpyutils.database import filebase_database
 
 from .helpers import run_blocking_test
@@ -63,6 +65,7 @@ def test_blocking_detection_works():
 # save_async — 真实大文件写入，不 mock
 # ---------------------------------------------------------------------------
 
+@ pytest.mark.slow
 def test_event_loop_not_blocked_by_save_async_real_write():
     """save_async 在真实大文件写入期间不阻塞事件循环。"""
     db_name = 'test_blocking_real_write'
@@ -94,6 +97,7 @@ def test_event_loop_not_blocked_by_save_async_real_write():
 # save_all_async — 真实并发大文件写入
 # ---------------------------------------------------------------------------
 
+@ pytest.mark.slow
 def test_event_loop_not_blocked_by_save_all_async_real_write():
     """save_all_async 并发保存多个大文件时不阻塞事件循环。
 
@@ -129,6 +133,7 @@ def test_event_loop_not_blocked_by_save_all_async_real_write():
 # load_db_async — 真实大文件读取
 # ---------------------------------------------------------------------------
 
+@ pytest.mark.slow
 def test_event_loop_not_blocked_by_load_db_async_real_read():
     """load_db_async 在真实大文件读取期间不阻塞事件循环。
 
