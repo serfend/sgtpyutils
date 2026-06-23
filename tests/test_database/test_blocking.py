@@ -67,7 +67,7 @@ def test_event_loop_not_blocked_by_save_async_real_write():
     """save_async 在真实大文件写入期间不阻塞事件循环。"""
     db_name = 'test_blocking_real_write'
     db = filebase_database.Database(db_name)
-    db.value = _make_large_data(size_mb=50.0)
+    db.value = _make_large_data(size_mb=1024.0)
 
     async def slow_coro():
         await db.save_async()
@@ -95,10 +95,12 @@ def test_event_loop_not_blocked_by_save_async_real_write():
 # ---------------------------------------------------------------------------
 
 def test_event_loop_not_blocked_by_save_all_async_real_write():
-    """save_all_async 并发保存多个大文件时不阻塞事件循环。"""
-    # 3 个文件，每个 ~5MB，总大小合理
-    names = [f'test_blocking_all_real_{i}' for i in range(3)]
-    large_data = _make_large_data(size_mb=5.0)
+    """save_all_async 并发保存多个大文件时不阻塞事件循环。
+
+    注意：此测试会写入 100 个文件 × 10MB = ~1GB 数据，耗时较长。
+    """
+    names = [f'test_blocking_all_real_{i}' for i in range(100)]
+    large_data = _make_large_data(size_mb=10.0)
 
     async def slow_coro():
         for name in names:
@@ -128,10 +130,13 @@ def test_event_loop_not_blocked_by_save_all_async_real_write():
 # ---------------------------------------------------------------------------
 
 def test_event_loop_not_blocked_by_load_db_async_real_read():
-    """load_db_async 在真实大文件读取期间不阻塞事件循环。"""
+    """load_db_async 在真实大文件读取期间不阻塞事件循环。
+
+    注意：此测试会先写入 1GB 文件，耗时较长。
+    """
     db_name = 'test_blocking_real_read'
     db = filebase_database.Database(db_name)
-    db.value = _make_large_data(size_mb=50.0)
+    db.value = _make_large_data(size_mb=1024.0)
     db.save()
 
     async def slow_coro():
