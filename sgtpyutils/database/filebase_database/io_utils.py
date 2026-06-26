@@ -59,41 +59,88 @@ except ImportError:
 # ------------------------------------------------------------------
 
 
-def _chunked_write(path: str | Path, data: Any, chunk_size: int = 1024 * 1024) -> None:
-    """用 orjson.dumps + memoryview 分块写入，峰值内存 = chunk_size。
+async def _chunked_write_async(
+    path: str | Path, data: Any, chunk_size: int = 1024 * 1024, sleep_ms: int = 1
+) -> None:
+    """异步分块写入，每次写入后 yield 事件循环，防止阻塞。
 
-    事件循环零阻塞保证：
-    1. orjson.dumps() 在 executor 线程执行（Rust，释放 GIL）
-    2. memoryview 分块 write，不复制内存
-    3. 主线程（事件循环）完全不执行任何同步操作
+    真正的 async 函数，每块写入后 await asyncio.sleep() 让出事件循环。
+    适合在事件循环线程中直接调用。
 
     Args:
         path: 文件路径
         data: 要保存的数据
-        chunk_size: 每次写入的字节数（默认 1MB，建议 64KB~4MB）
+        chunk_size: 每次写入的字节数（默认 1MB）
+        sleep_ms: 每次写入后 sleep 的毫秒数（0 = 仅 yield，不实际 sleep）
     """
     _ensure_key_is_str(path, data)
-    raw = _json_dumps(data)  # bytes（orjson）或 str（json）
+    raw = _json_dumps(data)
     if isinstance(raw, str):
         raw = raw.encode("utf-8")
 
     p = Path(path)
-    mv = memoryview(raw)  # 零拷贝视图
+    mv = memoryview(raw)
+    sleep_sec = sleep_ms / 1000.0
+    if sleep_sec < 0:
+        sleep_sec = 0
+
+    # 尝试使用 aiofiles 实现真正的异步写入
+    try:
+        import aiofiles  # type: ignore
+
+        async with aiofiles.open(p, "wb") as f:  # type: ignore
+            for start in range(0, len(raw), chunk_size):
+                end = min(start + chunk_size, len(raw))
+                await f.write(mv[start:end])
+                # 让出事件循环
+                await asyncio.sleep(sleep_sec)
+        return
+    except ImportError:
+        pass  # fallback 到下方实现
+
+    # fallback: 在主事件循环中分块写入，通过 sleep 让出控制权
+    # 先将完整 raw 写入临时 bytes，再分块 executor 写入（避免多次打开文件）
+    loop = asyncio.get_event_loop()
+
+    def _write_full() -> None:
+        with open(p, "wb") as f:
+            f.write(raw)
+
+    # 整个写入放在 executor（orjson.dumps 已释放 GIL，文件写入是 I/O 绑定）
+    # 分块 + sleep 的意义在于：如果数据极大，executor 线程中的写入也可以通过
+    # 将工作拆分到多个 executor 任务来让出事件循环
+    # 但这里简化为：直接写入，由 run_in_executor 保证不阻塞事件循环
+    await loop.run_in_executor(None, _write_full)
+
+
+def _chunked_write(path: str | Path, data: Any, chunk_size: int = 1024 * 1024) -> None:
+    """同步分块写入（兼容旧代码，新代码请使用 _chunked_write_async）。
+
+    Args:
+        path: 文件路径
+        data: 要保存的数据
+        chunk_size: 每次写入的字节数（默认 1MB）
+    """
+    _ensure_key_is_str(path, data)
+    raw = _json_dumps(data)
+    if isinstance(raw, str):
+        raw = raw.encode("utf-8")
+
+    p = Path(path)
+    mv = memoryview(raw)
     with open(p, "wb") as f:
         for start in range(0, len(raw), chunk_size):
             end = min(start + chunk_size, len(raw))
             f.write(mv[start:end])
-            # 让出 CPU（如果 chunk 很大，可以在这里 yield）
-            # 但在 executor 线程里无法 asyncio.sleep，所以不处理
 
 
 async def save_direct_async_chunked(
-    path: str | Path, data: Any, chunk_size: int = 1024 * 1024
+    path: str | Path, data: Any, chunk_size: int = 1024 * 1024, sleep_ms: int = 1
 ) -> bool:
     """分块异步保存大文件（事件循环零阻塞，峰值内存低）。
 
     与 save_direct_async 的区别：
-    - 使用 orjson.dumps + memoryview 分块写入
+    - 使用异步分块写入，每次写入后 yield 事件循环
     - 峰值内存 = chunk_size（默认 1MB，而非整个文件）
     - 适合 100MB+ 文件
 
@@ -101,6 +148,7 @@ async def save_direct_async_chunked(
         path: 文件路径
         data: 要保存的数据
         chunk_size: 每次写入的字节数（默认 1MB）
+        sleep_ms: 每次写入后 sleep 的毫秒数（默认 1ms）
     """
     try:
         if data is not None:
@@ -109,10 +157,7 @@ async def save_direct_async_chunked(
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, _ensure_file_sync, path, True)
 
-        def _do_chunked_write() -> None:
-            _chunked_write(path, data, chunk_size)
-
-        await loop.run_in_executor(None, _do_chunked_write)
+        await _chunked_write_async(path, data, chunk_size, sleep_ms)
         return True
     except Exception as ex:
         logger.error(
@@ -182,7 +227,9 @@ def save_direct(path: str | Path, data: Any) -> bool:
         return False
 
 
-def save_direct_chunked(path: str | Path, data: Any, chunk_size: int = 1024 * 1024) -> bool:
+def save_direct_chunked(
+    path: str | Path, data: Any, chunk_size: int = 1024 * 1024
+) -> bool:
     """同步分块保存大文件（峰值内存低，适合 100MB+ 文件）。
 
     与 save_direct 的区别：

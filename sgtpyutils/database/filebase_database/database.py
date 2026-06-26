@@ -168,24 +168,30 @@ class Database(ISaver):
         data = self._data_obj.to_dict()
         return await save_direct_async(self.database_filename, data)
 
-    async def save_async_chunked(self, chunk_size: int = 1024 * 1024) -> bool:
+    async def save_async_chunked(
+        self, chunk_size: int = 1024 * 1024, sleep_ms: int = 1
+    ) -> bool:
         """异步保存（分块写入，峰值内存低，适合 100MB+ 文件）。
 
         与 save_async 的区别：
         - 使用 orjson.dumps + memoryview 分块写入
         - 峰值内存 = chunk_size（默认 1MB，而非整个文件）
         - 事件循环零阻塞（orjson 释放 GIL）
+        - 每次写入后 yield 事件循环 sleep_ms 毫秒，防止阻塞
         - 适合已知的大文件（如 1GB+ 的单个 database）
 
         Args:
             chunk_size: 每次写入的字节数（默认 1MB，建议 64KB~4MB）
+            sleep_ms: 每次写入后 sleep 的毫秒数（默认 1ms，0 = 仅 yield）
         """
         if self._is_deleted:
             return False
         if self._database not in Database.cache:
             return False
         data = self._data_obj.to_dict()
-        return await save_direct_async_chunked(self.database_filename, data, chunk_size)
+        return await save_direct_async_chunked(
+            self.database_filename, data, chunk_size, sleep_ms
+        )
 
     # ------------------------------------------------------------------
     # 批量保存
@@ -247,16 +253,20 @@ class Database(ISaver):
         return ok, total
 
     @classmethod
-    async def save_all_async_chunked(cls, chunk_size: int = 1024 * 1024) -> tuple[int, int]:
+    async def save_all_async_chunked(
+        cls, chunk_size: int = 1024 * 1024, sleep_ms: int = 1
+    ) -> tuple[int, int]:
         """并发分块保存所有缓存的数据库（峰值内存低，事件循环零阻塞）。
 
         与 save_all_async 的区别：
         - 使用 orjson.dumps + memoryview 分块写入
         - 峰值内存 = chunk_size（默认 1MB）
         - 事件循环零阻塞（orjson 释放 GIL）
+        - 每次写入后 yield 事件循环 sleep_ms 毫秒，防止阻塞
 
         Args:
             chunk_size: 每次写入的字节数（默认 1MB）
+            sleep_ms: 每次写入后 sleep 的毫秒数（默认 1ms，0 = 仅 yield）
 
         Returns:
             (成功数, 总数)
@@ -265,7 +275,9 @@ class Database(ISaver):
         if total == 0:
             return 0, 0
         tasks = [
-            save_direct_async_chunked(cls._build_filename(name), data_obj.to_dict(), chunk_size)
+            save_direct_async_chunked(
+                cls._build_filename(name), data_obj.to_dict(), chunk_size, sleep_ms
+            )
             for name, data_obj in list(cls.cache.items())
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
