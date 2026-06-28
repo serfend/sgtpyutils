@@ -73,7 +73,6 @@ async def _chunked_write_async(
         chunk_size: 每次写入的字节数（默认 1MB）
         sleep_ms: 每次写入后 sleep 的毫秒数（0 = 仅 yield，不实际 sleep）
     """
-    _ensure_key_is_str(path, data)
     raw = _json_dumps(data)
     if isinstance(raw, str):
         raw = raw.encode("utf-8")
@@ -121,7 +120,6 @@ def _chunked_write(path: str | Path, data: Any, chunk_size: int = 1024 * 1024) -
         data: 要保存的数据
         chunk_size: 每次写入的字节数（默认 1MB）
     """
-    _ensure_key_is_str(path, data)
     raw = _json_dumps(data)
     if isinstance(raw, str):
         raw = raw.encode("utf-8")
@@ -199,11 +197,6 @@ async def ensure_file_async(path: str | Path, log: bool = False) -> None:
 # ------------------------------------------------------------------
 
 
-def _ensure_key_is_str(name: str, data: Any) -> None:
-    if isinstance(data, dict):
-        for k in data:
-            if not isinstance(k, str):
-                logger.warning(f"{name}, key [{k}] invalid type: {type(k)}")
 
 
 def save_direct(path: str | Path, data: Any) -> bool:
@@ -213,7 +206,6 @@ def save_direct(path: str | Path, data: Any) -> bool:
             assert isinstance(data, (dict, list)), f"无效的类型: {type(data)}"
 
         _ensure_file_sync(path, True)
-        _ensure_key_is_str(path, data)
         raw = _json_dumps(data)
         if isinstance(raw, bytes):
             Path(path).write_bytes(raw)
@@ -270,7 +262,6 @@ async def save_direct_async(path: str | Path, data: Any) -> bool:
         await loop.run_in_executor(None, _ensure_file_sync, path, True)
 
         def _do_write() -> None:
-            _ensure_key_is_str(path, data)
             raw = _json_dumps(data)
             if isinstance(raw, bytes):
                 Path(path).write_bytes(raw)

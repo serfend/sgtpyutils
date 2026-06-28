@@ -22,7 +22,6 @@ from .io_utils import (
     ensure_file,
     ensure_file_async,
     load_direct_async,
-    _ensure_key_is_str,
 )
 from .models import DatabaseData, DateEncoder
 
